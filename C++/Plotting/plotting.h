@@ -17,32 +17,39 @@
 #ifndef MPCC_PLOTTING_H
 #define MPCC_PLOTTING_H
 
-#include "config.h"
-#include "types.h"
 #include "Params/params.h"
 #include "Params/track.h"
-#include <matplotlibcpp.h>
-#include <vector>
+#include "config.h"
+#include "types.h"
+// #include <matplotlibcpp.h>
 #include <MPC/mpc.h>
 #include <Model/model.h>
 
-namespace plt = matplotlibcpp;
+#include <nlohmann/json.hpp>
+#include <vector>
+
+#include "External/httplib/httplib.h"
+
+// namespace plt = matplotlibcpp;
 
 namespace mpcc {
 class Plotting {
-public:
+   public:
     void plotRun(const std::list<MPCReturn> &log, const TrackPos &track_xy) const;
     void plotSim(const std::list<MPCReturn> &log, const TrackPos &track_xy) const;
 
     Plotting(double Ts, PathToJson path);
 
-private:
+   private:
     void plotBox(const State &x0) const;
+
+    nlohmann::json jsonLog(const std::list<MPCReturn> &log) const;
+    nlohmann::json jsonTrack(const TrackPos &track_xy) const;
 
     Model model_;
     Constraints constraints_;
     Param param_;
 };
-}
+}  // namespace mpcc
 
-#endif //MPCC_PLOTTING_H
+#endif  // MPCC_PLOTTING_H

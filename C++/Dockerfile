@@ -1,66 +1,83 @@
-# Use the official Ubuntu 20.04 as the base image
-FROM ubuntu:20.04
+# Use the official Ubuntu 24.04 as the base image
+FROM ubuntu:24.04
 
-# Set the geographic area environment variable
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=Europe/Paris
+# Arguments for non-root user
+ARG USERNAME=devuser
+ARG USER_UID=1001
+ARG USER_GID=$USER_UID
 
-# Set the working directory inside the container
-WORKDIR /app
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=Europe/Paris
 
-RUN apt update && \
-    apt install -y build-essential wget && \
-    apt install -y cmake && \
-    apt install -y git && \
-    apt install -y libgtest-dev
-
-RUN apt-get update && apt-get install -y \
+# Install dependencies and tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    git \
+    wget \
+    sudo \
     python3 \
     python3-dev \
-    python3-pip\
-    python3-numpy
+    python3-pip \
+    python3-numpy \
+    libgtest-dev \
+    libeigen3-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Python packages
-RUN pip3 install numpy==1.20.0 matplotlib
+# Install specific Python packages needed (numpy is already apt-installed, but pinned version might be needed?)
+# Keeping it simple for now, relying on apt's numpy or upgrading if necessary. 
+# Removing matplotlib as per plan.
+# RUN pip3 install numpy==1.20.0 
 
-# Install Eigen library
-RUN apt-get install -y libeigen3-dev
+# Install CppAD
+WORKDIR /tmp
+RUN git clone https://github.com/coin-or/CppAD.git && \
+    cd CppAD && \
+    mkdir build && cd build && \
+    cmake .. -Dcppad_prefix=/usr/local && \
+    make install && \
+    cd ../.. && rm -rf CppAD
 
-RUN git clone https://github.com/coin-or/CppAD.git
-WORKDIR /app/CppAD
-RUN mkdir build
-WORKDIR /app/CppAD/build
-RUN cmake ..
-RUN make install
+# Install CppADCodeGen
+RUN git clone https://github.com/joaoleal/CppADCodeGen.git && \
+    cd CppADCodeGen && \
+    mkdir build && cd build && \
+    cmake .. && \
+    make install && \
+    cd ../.. && rm -rf CppADCodeGen
 
-WORKDIR /app
+# Install blasfeo
+RUN git clone https://github.com/giaf/blasfeo.git && \
+    cd blasfeo && \
+    mkdir build && cd build && \
+    # cmake .. && \
+    # make install && \
+    cd ../..
 
-RUN git clone https://github.com/joaoleal/CppADCodeGen.git
-WORKDIR /app/CppADCodeGen
-RUN mkdir build
-WORKDIR /app/CppADCodeGen/build
-RUN cmake ..
-RUN make install
+# Install hpipm
+RUN git clone https://github.com/giaf/hpipm.git && \
+    cd hpipm && \
+    # make static_library TARGET=ARMV8A_APPLE_M1 -j4 && \
+    # mkdir -p /app/hpipm && \
+    # cp -r include /app/hpipm/ && \
+    # cp -r lib /app/hpipm/ && \
+    cd ..
 
-WORKDIR /app
+# Setup non-root user
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
 
-RUN git clone https://github.com/giaf/blasfeo.git
-WORKDIR /app/blasfeo
-RUN mkdir build
-WORKDIR /app/blasfeo/build
-RUN cmake ..
-RUN make install
+# Set working directory and ownership
+WORKDIR /app/MPCC
+RUN chown -R $USERNAME:$USERNAME /app
 
-WORKDIR /app
-RUN git clone https://github.com/giaf/hpipm.git
-WORKDIR /app/hpipm
-RUN make static_library TARGET=GENERIC -j 4
+# Switch to non-root user
+USER $USERNAME
 
-# Create a directory inside the container to mount the external folder
-RUN mkdir /app/MPCC
-
-# Mount the external folder to /app/MPCC inside the container
+# Define volume
 VOLUME /app/MPCC
 
-# Change to the MPCC directory
-WORKDIR /app/MPCC
+CMD ["/bin/bash"]

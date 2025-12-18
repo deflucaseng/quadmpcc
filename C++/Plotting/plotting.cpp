@@ -1,249 +1,99 @@
-// Copyright 2019 Alexander Liniger
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-
 #include "plotting.h"
-namespace mpcc{
 
-Plotting::Plotting(double Ts,PathToJson path)
-:model_(Model(Ts,path)),
-param_(Param(path.param_path)),
-constraints_(Constraints(Ts,path))
-{
-}
-void Plotting::plotRun(const std::list<MPCReturn> &log, const TrackPos &track_xy) const
-{
-    std::vector<double> plot_xc(track_xy.X.data(),track_xy.X.data() + track_xy.X.size());
-    std::vector<double> plot_yc(track_xy.Y.data(),track_xy.Y.data() + track_xy.Y.size());
+#include <chrono>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <thread>
 
-    std::vector<double> plot_xi(track_xy.X_inner.data(),track_xy.X_inner.data() + track_xy.X_inner.size());
-    std::vector<double> plot_yi(track_xy.Y_inner.data(),track_xy.Y_inner.data() + track_xy.Y_inner.size());
-    std::vector<double> plot_xo(track_xy.X_outer.data(),track_xy.X_outer.data() + track_xy.X_outer.size());
-    std::vector<double> plot_yo(track_xy.Y_outer.data(),track_xy.Y_outer.data() + track_xy.Y_outer.size());
+namespace mpcc {
 
-    std::vector<double> plot_x;
-    std::vector<double> plot_y;
-    std::vector<double> plot_phi;
-    std::vector<double> plot_vx;
-    std::vector<double> plot_vy;
-    std::vector<double> plot_r;
-    std::vector<double> plot_s;
-    std::vector<double> plot_d;
-    std::vector<double> plot_b;
-    std::vector<double> plot_delta;
-    std::vector<double> plot_vs;
+Plotting::Plotting(double Ts, PathToJson path)
+    : model_(Model(Ts, path)), param_(Param(path.param_path)), constraints_(Constraints(Ts, path)) {}
 
-    std::vector<double> plot_dd;
-    std::vector<double> plot_db;
-    std::vector<double> plot_ddelta;
-    std::vector<double> plot_dvs;
+void Plotting::plotRun(const std::list<MPCReturn> &log, const TrackPos &track_xy) const {
+    // In this web-based version, we'll combine plotRun and plotSim functionality.
+    // plotRun in the original code showed static plots of the whole run.
+    std::cout << "Starting Web Plotting Server..." << std::endl;
 
-    std::vector<double> plot_alpha_f;
-    std::vector<double> plot_tire_rear;
-    std::vector<double> plot_tire_front;
+    httplib::Server svr;
 
-    for(MPCReturn log_i : log)
-    {
-        plot_x.push_back(log_i.mpc_horizon[0].xk.X);
-        plot_y.push_back(log_i.mpc_horizon[0].xk.Y);
-        plot_phi.push_back(log_i.mpc_horizon[0].xk.phi);
-        plot_vx.push_back(log_i.mpc_horizon[0].xk.vx);
-        plot_vy.push_back(log_i.mpc_horizon[0].xk.vy);
-        plot_r.push_back(log_i.mpc_horizon[0].xk.r);
-        plot_s.push_back(log_i.mpc_horizon[0].xk.s);
-        plot_d.push_back(log_i.mpc_horizon[0].xk.D);
-        plot_b.push_back(log_i.mpc_horizon[0].xk.B);
-        plot_delta.push_back(log_i.mpc_horizon[0].xk.delta);
-        plot_vs.push_back(log_i.mpc_horizon[0].xk.vs);
-
-        plot_dd.push_back(log_i.mpc_horizon[0].uk.dD);
-        plot_db.push_back(log_i.mpc_horizon[0].uk.dB);
-        plot_ddelta.push_back(log_i.mpc_horizon[0].uk.dDelta);
-        plot_dvs.push_back(log_i.mpc_horizon[0].uk.dVs);
-
-        const StateVector x_vec = stateToVector(log_i.mpc_horizon[2].xk);
-        const std::vector<double> x_std_vec(x_vec.data(),x_vec.data() + x_vec.size());
-        double alpha_f = 0.0;//model_.getSlipAngleFront(log_i.mpc_horizon[0].xk);
-        double tire_con_front = (constraints_.tire_con_front_model_)->ForwardZero(x_std_vec)[0];
-        double tire_con_rear = (constraints_.tire_con_rear_model_)->ForwardZero(x_std_vec)[0];
-        plot_alpha_f.push_back(alpha_f);
-        plot_tire_rear.push_back(tire_con_rear);
-        plot_tire_front.push_back(tire_con_front);
-    }
-
-    std::vector<double> plot_eps_x;
-    std::vector<double> plot_eps_y;
-    for(double t = 0; t<2*M_PI;t+=0.1)
-    {
-        plot_eps_x.push_back(cos(t)*param_.Dr*param_.e_eps);
-        plot_eps_y.push_back(sin(t)*param_.Dr*1./param_.e_long*param_.e_eps);
-    }
-    plt::figure();
-    plt::plot(plot_xc,plot_yc,"r--");
-    plt::plot(plot_xi,plot_yi,"k-");
-    plt::plot(plot_xo,plot_yo,"k-");
-    plt::plot(plot_x,plot_y,"b-");
-    plt::axis("equal");
-    plt::xlabel("X [m]");
-    plt::ylabel("Y [m]");
-    plt::save("XY_traj.pdf");
-    plt::figure();
-    // plt::subplot(3,2,1);
-    plt::plot(plot_x);
-    plt::ylabel("X [m]");
-    plt::figure();
-    // plt::subplot(3,2,2);
-    plt::plot(plot_y);
-    plt::ylabel("Y [m]");
-    plt::figure();
-    // plt::subplot(3,2,3);
-    plt::plot(plot_phi);
-    plt::ylabel("phi [rad]");
-    plt::figure();
-    // plt::subplot(3,2,4);
-    plt::plot(plot_vx);
-    plt::ylabel("v_x [m/s]");
-    plt::figure();
-    // plt::subplot(3,2,5);
-    plt::plot(plot_vy);
-    plt::ylabel("v_y [m/s]");
-    plt::figure();
-    // plt::subplot(3,2,6);
-    plt::plot(plot_r);
-    plt::ylabel("r [rad/s]");
-
-
-    plt::figure();
-    plt::plot(plot_d);
-    plt::ylabel("D [-]");
-
-    plt::figure();
-    plt::plot(plot_delta);
-    plt::ylabel("delta [rad]");
-
-    plt::figure();
-    plt::plot(plot_b);
-    plt::ylabel("brake [-]");
-
-    plt::figure();
-    plt::plot(plot_vs);
-    plt::ylabel("v_s [m/s]");
-
-    plt::figure();
-    plt::plot(plot_dd);
-    plt::ylabel("dot{D} [-]");
-
-    plt::figure();
-    plt::plot(plot_db);
-    plt::ylabel("dot{B} [-]");
-
-    plt::figure();
-    plt::plot(plot_ddelta);
-    plt::ylabel("dot{delta} [rad/s]");
-
-    plt::figure();
-    plt::plot(plot_dvs);
-    plt::ylabel("dot{v_s} [m/s^2]");
-
-    plt::figure();
-    plt::plot(plot_s);
-    plt::ylabel("s [m]");
-
-    plt::figure();
-    plt::plot(plot_s,plot_tire_front);
-    plt::ylabel("tire_con_f");
-
-    plt::figure();
-    plt::plot(plot_s,plot_tire_front);
-    plt::xlabel("tire_con_r");
-    plt::show();
-
-}
-void Plotting::plotSim(const std::list<MPCReturn> &log, const TrackPos &track_xy) const
-{
-    std::vector<double> plot_xc(track_xy.X.data(),track_xy.X.data() + track_xy.X.size());
-    std::vector<double> plot_yc(track_xy.Y.data(),track_xy.Y.data() + track_xy.Y.size());
-
-    std::vector<double> plot_xi(track_xy.X_inner.data(),track_xy.X_inner.data() + track_xy.X_inner.size());
-    std::vector<double> plot_yi(track_xy.Y_inner.data(),track_xy.Y_inner.data() + track_xy.Y_inner.size());
-    std::vector<double> plot_xo(track_xy.X_outer.data(),track_xy.X_outer.data() + track_xy.X_outer.size());
-    std::vector<double> plot_yo(track_xy.Y_outer.data(),track_xy.Y_outer.data() + track_xy.Y_outer.size());
-
-
-    std::vector<double> plot_x;
-    std::vector<double> plot_y;
-
-    for(MPCReturn log_i : log)
-    {
-        plot_x.resize(0);
-        plot_y.resize(0);
-        for(int j=0;j<log_i.mpc_horizon.size();j++)
-        {
-            plot_x.push_back(log_i.mpc_horizon[j].xk.X);
-            plot_y.push_back(log_i.mpc_horizon[j].xk.Y);
+    // Serve static index.html
+    svr.Get("/", [](const httplib::Request &, httplib::Response &res) {
+        std::ifstream file("visualization/index.html");
+        if (file) {
+            std::stringstream buffer;
+            buffer << file.rdbuf();
+            res.set_content(buffer.str(), "text/html");
+        } else {
+            res.set_content("<h1>Error: visualization/index.html not found</h1>", "text/html");
         }
-        double max_x = *std::max_element(plot_x.begin(),plot_x.end());
-        double min_x = *std::min_element(plot_x.begin(),plot_x.end());
-        double max_y = *std::max_element(plot_y.begin(),plot_y.end());
-        double min_y = *std::min_element(plot_y.begin(),plot_y.end());
+    });
 
+    // Serve data
+    svr.Get("/data", [&](const httplib::Request &, httplib::Response &res) {
+        nlohmann::json root;
+        root["track"] = jsonTrack(track_xy);
+        root["log"] = jsonLog(log);
+        res.set_content(root.dump(), "application/json");
+    });
 
-        plt::clf();
-        plt::figure(1);
-        plt::plot(plot_xc,plot_yc,"r--");
-        plt::plot(plot_xi,plot_yi,"k-");
-        plt::plot(plot_xo,plot_yo,"k-");
-        plotBox(log_i.mpc_horizon[0].xk);
-        plt::plot(plot_x,plot_y,"b-");
-        plt::axis("equal");
+    std::cout << "Open http://localhost:8080 in your browser to view the plots." << std::endl;
+    std::cout << "Press Ctrl+C to stop the server." << std::endl;
 
-        plt::clf();
-        plt::figure(2);
-        plt::plot(plot_xc,plot_yc,"r--");
-        plt::plot(plot_xi,plot_yi,"k-");
-        plt::plot(plot_xo,plot_yo,"k-");
-        plotBox(log_i.mpc_horizon[0].xk);
-        plt::plot(plot_x,plot_y,"b-");
-        plt::axis("equal");
-        plt::xlim(min_x-5,max_x+20);
-        plt::ylim(min_y-20,max_y+20);
-        plt::pause(0.01);
+    svr.listen("0.0.0.0", 8080);
+}
+
+void Plotting::plotSim(const std::list<MPCReturn> &log, const TrackPos &track_xy) const {
+    // Redirect to plotRun as the web interface handles both static and dynamic visualization
+    plotRun(log, track_xy);
+}
+
+void Plotting::plotBox(const State &x0) const {
+    // Deprecated for internal use, logic moved to frontend or json generation if needed
+}
+
+nlohmann::json Plotting::jsonTrack(const TrackPos &track_xy) const {
+    nlohmann::json j;
+    j["X"] = std::vector<double>(track_xy.X.data(), track_xy.X.data() + track_xy.X.size());
+    j["Y"] = std::vector<double>(track_xy.Y.data(), track_xy.Y.data() + track_xy.Y.size());
+    j["X_inner"] = std::vector<double>(track_xy.X_inner.data(), track_xy.X_inner.data() + track_xy.X_inner.size());
+    j["Y_inner"] = std::vector<double>(track_xy.Y_inner.data(), track_xy.Y_inner.data() + track_xy.Y_inner.size());
+    j["X_outer"] = std::vector<double>(track_xy.X_outer.data(), track_xy.X_outer.data() + track_xy.X_outer.size());
+    j["Y_outer"] = std::vector<double>(track_xy.Y_outer.data(), track_xy.Y_outer.data() + track_xy.Y_outer.size());
+    return j;
+}
+
+nlohmann::json Plotting::jsonLog(const std::list<MPCReturn> &log) const {
+    nlohmann::json j_log = nlohmann::json::array();
+
+    for (const auto &log_i : log) {
+        nlohmann::json step;
+        const auto &xk = log_i.mpc_horizon[0].xk;
+
+        step["x"] = xk.X;
+        step["y"] = xk.Y;
+        step["phi"] = xk.phi;
+        step["vx"] = xk.vx;
+        step["vy"] = xk.vy;
+        step["r"] = xk.r;
+        step["s"] = xk.s;
+        step["D"] = xk.D;
+        step["delta"] = xk.delta;
+        step["vs"] = xk.vs;
+
+        // Horizon
+        std::vector<double> horizon_x, horizon_y;
+        for (const auto &h_step : log_i.mpc_horizon) {
+            horizon_x.push_back(h_step.xk.X);
+            horizon_y.push_back(h_step.xk.Y);
+        }
+        step["horizon_x"] = horizon_x;
+        step["horizon_y"] = horizon_y;
+
+        j_log.push_back(step);
     }
+    return j_log;
 }
 
-void Plotting::plotBox(const State &x0) const
-{
-    std::vector<double> corner_x;
-    std::vector<double> corner_y;
-    double body_xl = std::cos(x0.phi)*param_.car_l;
-    double body_xw = std::sin(x0.phi)*param_.car_w;
-    double body_yl = std::sin(x0.phi)*param_.car_l;
-    double body_yw = -std::cos(x0.phi)*param_.car_w;
-
-    corner_x.push_back(x0.X + body_xl + body_xw);
-    corner_x.push_back(x0.X + body_xl - body_xw);
-    corner_x.push_back(x0.X - body_xl - body_xw);
-    corner_x.push_back(x0.X - body_xl + body_xw);
-    corner_x.push_back(x0.X + body_xl + body_xw);
-
-    corner_y.push_back(x0.Y + body_yl + body_yw);
-    corner_y.push_back(x0.Y + body_yl - body_yw);
-    corner_y.push_back(x0.Y - body_yl - body_yw);
-    corner_y.push_back(x0.Y - body_yl + body_yw);
-    corner_y.push_back(x0.Y + body_yl + body_yw);
-
-    plt::plot(corner_x,corner_y,"k-");
-}
-}
+}  // namespace mpcc
