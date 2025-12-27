@@ -7,3 +7,6 @@ CMakeCache.txt
 CMakeFiles/
 Makefile
 cmake_install.cmake
+
+# Pre-commit
+pre_commit_output.txt

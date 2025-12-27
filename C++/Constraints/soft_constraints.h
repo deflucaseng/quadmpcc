@@ -17,19 +17,17 @@
 #ifndef MPCC_SOFTCONSTRAINTS_H
 #define MPCC_SOFTCONSTRAINTS_H
 
-
-#include "config.h"
-#include "types.h"
+#include "Config/config.h"  // NOLINT(build/include_subdir)
+#include "Config/types.h"   // NOLINT(build/include_subdir)
 namespace mpcc {
 class SoftConstraints {
+ private:
+  Q_MPC Zx;
+  R_MPC Zu;
 
-private:
-    Q_MPC Zx;
-    R_MPC Zu;
-
-    q_MPC zx;
-    r_MPC zu;
+  q_MPC zx;
+  r_MPC zu;
 };
-}
+}  // namespace mpcc
 
-#endif //MPCC_SOFTCONSTRAINTS_H
+#endif  // MPCC_SOFTCONSTRAINTS_H

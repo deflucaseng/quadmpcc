@@ -6,7 +6,7 @@
   "n_sim": 2000,
   "Ts": 0.05,
   "v0": 10.0,
-  
+
   "model_path": "Params/model.json",
   "cost_path": "Params/cost.json",
   "bounds_path": "Params/bounds.json",

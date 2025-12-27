@@ -53,6 +53,9 @@ RUN chown -R $USERNAME:$USERNAME /app
 # Switch to non-root user
 USER $USERNAME
 
+# Configure Git to avoid "dubious ownership" errors for the mounted volume
+RUN git config --global --add safe.directory /app/MPCC
+
 # Define volume
 VOLUME /app/MPCC
 

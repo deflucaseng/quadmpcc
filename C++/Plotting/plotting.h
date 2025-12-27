@@ -17,38 +17,39 @@
 #ifndef MPCC_PLOTTING_H
 #define MPCC_PLOTTING_H
 
-#include "Params/params.h"
-#include "Params/track.h"
-#include "config.h"
-#include "types.h"
-// #include <matplotlibcpp.h>
-#include <MPC/mpc.h>
-#include <Model/model.h>
+#include <httplib.h>
 
-#include <nlohmann/json.hpp>
+#include <list>
 #include <vector>
 
-#include "External/httplib/httplib.h"
+#include <nlohmann/json.hpp>
+
+#include "Config/config.h"
+#include "Config/params.h"
+#include "Config/track.h"
+#include "Config/types.h"
+#include "MPC/mpc.h"
+#include "Model/model.h"
 
 // namespace plt = matplotlibcpp;
 
 namespace mpcc {
 class Plotting {
-   public:
-    void plotRun(const std::list<MPCReturn> &log, const TrackPos &track_xy) const;
-    void plotSim(const std::list<MPCReturn> &log, const TrackPos &track_xy) const;
+ public:
+  void plotRun(const std::list<MPCReturn> &log, const TrackPos &track_xy) const;
+  void plotSim(const std::list<MPCReturn> &log, const TrackPos &track_xy) const;
 
-    Plotting(double Ts, PathToJson path);
+  Plotting(double Ts, PathToJson path);
 
-   private:
-    void plotBox(const State &x0) const;
+ private:
+  void plotBox(const State &x0) const;
 
-    nlohmann::json jsonLog(const std::list<MPCReturn> &log) const;
-    nlohmann::json jsonTrack(const TrackPos &track_xy) const;
+  nlohmann::json jsonLog(const std::list<MPCReturn> &log) const;
+  nlohmann::json jsonTrack(const TrackPos &track_xy) const;
 
-    Model model_;
-    Constraints constraints_;
-    Param param_;
+  Model model_;
+  Constraints constraints_;
+  Param param_;
 };
 }  // namespace mpcc
 

@@ -1,3 +1,28 @@
 BasedOnStyle: Google
-IndentWidth: 4
-ColumnLimit: 120
+
+# Enable sorting and grouping
+SortIncludes: true
+IncludeBlocks: Regroup
+
+# Define the custom order required by the linter
+# Priority 0: Main header (e.g., plotting.h in plotting.cpp)
+# Priority 1: C System headers (<stdio.h>)
+# Priority 2: C++ System headers (<vector>, <list>)
+# Priority 3: Third-party/Other headers (<nlohmann/json.hpp>, "External/...")
+# Priority 4: Project headers ("MPC/mpc.h", "config.h")
+IncludeCategories:
+  - Regex:           '^"plotting\.h"$'
+    Priority:        0
+  - Regex:           '^<.*\.h>$'
+    Priority:        1
+  - Regex:           '^<[^.]*>$'
+    Priority:        2
+  - Regex:           '^<.*'
+    Priority:        3
+  - Regex:           '.*'
+    Priority:        4
+
+# Google Style basics
+IndentWidth: 2
+ColumnLimit: 80
+AllowShortFunctionsOnASingleLine: Empty

@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD_LIBRARIES -ldl)
 set(CMAKE_CXX_FLAGS "-O0")
 
 include_directories(.)
-include_directories(/opt/blasfeo/include)
-include_directories(/app/hpipm/include)
+include_directories(External/blasfeo/lib/include)
+include_directories(External/hpipm/lib/include)
 include_directories(External)
 include_directories(External/Eigen)
 include_directories(External/httplib)
@@ -17,10 +17,10 @@ find_package(Python3 COMPONENTS Interpreter NumPy Development)
 
 add_executable(MPCC
         main.cpp
-        types.cpp
-        types.h
-        config.h
-        Params/params.cpp
+        Config/types.cpp
+        Config/types.h
+        Config/config.h
+        Config/params.cpp
         Spline/cubic_spline.cpp
         Spline/arc_length_spline.cpp
         Spline/boost_splines.cpp
@@ -36,20 +36,21 @@ add_executable(MPCC
         # Tests/model_integrator_test.cpp
         # Tests/constratins_test.cpp
         MPC/mpc.cpp
-        Params/track.cpp
-        Params/track.h
+        Config/track.cpp
+        Config/track.h
         Plotting/plotting.cpp
         Plotting/plotting.h)
 
 
 
-message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
-message(STATUS "Python3_INCLUDE_DIRS: ${Python3_INCLUDE_DIRS}")
-message(STATUS "Python3_LIBRARIES: ${Python3_LIBRARIES}")
+target_link_libraries(MPCC ${CMAKE_SOURCE_DIR}/External/hpipm/lib/lib/libhpipm.a ${CMAKE_SOURCE_DIR}/External/blasfeo/lib/lib/libblasfeo.a m)
+# target_link_libraries(MPCC /app/hpipm/lib/libhpipm.a /opt/blasfeo/lib/libblasfeo.a m pthread)
 
-target_include_directories(MPCC PRIVATE ${Python3_INCLUDE_DIRS})
-target_link_libraries(MPCC ${Python3_LIBRARIES})
-
-
-# target_link_libraries(MPCC ${CMAKE_SOURCE_DIR}/External/hpipm/lib/lib/libhpipm.a ${CMAKE_SOURCE_DIR}/External/blasfeo/lib/lib/libblasfeo.a m)
-target_link_libraries(MPCC /app/hpipm/lib/libhpipm.a /opt/blasfeo/lib/libblasfeo.a m pthread)
+# Copy visualization assets to the build directory on every build
+add_custom_target(copy_visualization ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/visualization
+    ${CMAKE_CURRENT_BINARY_DIR}/visualization
+    COMMENT "Copying visualization assets to build directory"
+)
+add_dependencies(MPCC copy_visualization)

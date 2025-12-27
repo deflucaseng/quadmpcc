@@ -26,19 +26,19 @@ We also split up the force in x-direction into two components, the force at the 
 The C++ implementation adds the tire constraints used in [AMZ Driverless: The Full Autonomous Racing System](https://arxiv.org/abs/1905.05150). More precisely, I added a slip angle constraint for the front wheel (since the 1:43 scale cars are rear wheel drive and have no brakes), and a tire friction ellipse constraint for the rear wheel. Thus, the MPC problem the following three constraints, on top of state and input bounds,
 <img src="https://github.com/alexliniger/MPCC/blob/master/Images/constraints_cpp.jpg" width="700" />
 
-Note that if the car is all wheel drive or has brakes at the front wheel, also a tire ellipse constraint should be used for the front tire. 
+Note that if the car is all wheel drive or has brakes at the front wheel, also a tire ellipse constraint should be used for the front tire.
 
 ### Beta Cost
 We added an additional regularization cost, which penalizes high sideslip angles. This second regularization cost augments the small cost on the yaw rate. These regularization costs force the car to behave more reasonably and help the NLP to converge better.
 <img src="https://github.com/alexliniger/MPCC/blob/master/Images/cost_cpp.jpg" width="700" />
 
 ### Obstacle Avoidance
-There is no obstacle avoidance available yet in the C++ version 
+There is no obstacle avoidance available yet in the C++ version
 
 ### Options
 Currently, only one track and car model is implemented. However, adapting the parameters only requires changing the json files in the Params folder.
 
-## Installation 
+## Installation
 
 To install all the dependencies run
 ```

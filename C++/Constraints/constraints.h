@@ -17,48 +17,55 @@
 #ifndef MPCC_CONSTRAINTS_H
 #define MPCC_CONSTRAINTS_H
 
-#include "config.h"
-#include "Spline/boost_splines.h"
-#include "Model/model.h"
+#include <memory>
+#include <vector>
+
 #include <cppad/cg.hpp>
-namespace mpcc{
+
+#include "Config/config.h"
+#include "Model/model.h"
+#include "Spline/boost_splines.h"
+namespace mpcc {
 struct ConstrainsMatrix {
-    // dl <= C xk + D uk <= du
-    C_MPC C;    //polytopic state constraints
-    D_MPC D;    //polytopic input constraints
-    d_MPC dl;   //lower bounds
-    d_MPC du;   //upper bounds
+  // dl <= C xk + D uk <= du
+  C_MPC C;   // polytopic state constraints
+  D_MPC D;   // polytopic input constraints
+  d_MPC dl;  // lower bounds
+  d_MPC du;  // upper bounds
 };
 
 struct OneDConstraint {
-    const C_i_MPC C_i;
-    const double dl_i;
-    const double du_i;
+  const C_i_MPC C_i;
+  const double dl_i;
+  const double du_i;
 };
 
 class Constraints {
-public:
-    ConstrainsMatrix getConstraints(const BoostSplines &track,const State &x,const Input &u) const;
+ public:
+  ConstrainsMatrix getConstraints(const BoostSplines &track, const State &x,
+                                  const Input &u) const;
 
-    Constraints();
-    Constraints(double Ts,const PathToJson &path);
+  Constraints();
+  Constraints(double Ts, const PathToJson &path);
 
-    std::unique_ptr<CppAD::cg::GenericModel<double>> tire_con_front_model_;
-    std::unique_ptr<CppAD::cg::GenericModel<double>> tire_con_rear_model_;
-private:
-    OneDConstraint getTrackConstraints(const BoostSplines &track,const State &x) const;
+  std::unique_ptr<CppAD::cg::GenericModel<double>> tire_con_front_model_;
+  std::unique_ptr<CppAD::cg::GenericModel<double>> tire_con_rear_model_;
 
-    OneDConstraint getTireConstraintRear(const State &x) const;
+ private:
+  OneDConstraint getTrackConstraints(const BoostSplines &track,
+                                     const State &x) const;
 
-    OneDConstraint getTireConstraintFront(const State &x) const;
+  OneDConstraint getTireConstraintRear(const State &x) const;
 
-    std::unique_ptr<CppAD::cg::LinuxDynamicLib<double>> tire_con_front_lib_;
+  OneDConstraint getTireConstraintFront(const State &x) const;
 
-    std::unique_ptr<CppAD::cg::LinuxDynamicLib<double>> tire_con_rear_lib_;
+  std::unique_ptr<CppAD::cg::LinuxDynamicLib<double>> tire_con_front_lib_;
 
-    Model model_;
-    Param param_;
+  std::unique_ptr<CppAD::cg::LinuxDynamicLib<double>> tire_con_rear_lib_;
+
+  Model model_;
+  Param param_;
 };
-}
+}  // namespace mpcc
 
-#endif //MPCC_CONSTRAINTS_H
+#endif  // MPCC_CONSTRAINTS_H

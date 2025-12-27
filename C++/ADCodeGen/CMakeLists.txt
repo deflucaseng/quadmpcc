@@ -15,8 +15,8 @@ include_directories(../External/Json/include)
 add_executable(ADCodeGen
         ad_dynamics.cpp
         ad_dynamics.h
-        ../types.cpp
-        ../Params/params.cpp
+        ../Config/types.cpp
+        ../Config/params.cpp
         main.cpp)
 
 target_link_libraries(ADCodeGen /usr/local/lib/libcppad_lib.so)

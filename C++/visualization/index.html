@@ -1,45 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MPCC Visualization</title>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <style>
-        body { font-family: sans-serif; margin: 0; padding: 20px; background: #f0f0f0; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h1, h2 { color: #333; }
-        #plot-xy { width: 100%; height: 700px; }
-        .states-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .plot-small { width: 100%; height: 300px; }
-        #status { padding: 10px; background: #e0e0e0; border-radius: 4px; margin-bottom: 20px; }
-        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        .controls { margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-        input[type="range"] { flex-grow: 1; }
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        h1,
+        h2 {
+            color: #333;
+        }
+
+        .plot-main {
+            width: 100%;
+            height: 600px;
+        }
+
+        .plots-horizontal {
+            display: flex;
+            gap: 20px;
+        }
+
+        .plot-small {
+            width: 100%;
+            height: 300px;
+        }
+
+        #status {
+            padding: 10px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>MPCC Visualization</h1>
         <div id="status">Loading data...</div>
-        
+
         <div class="card">
             <h2>Track & Trajectory</h2>
             <div class="controls">
                 <button id="play-btn">Play</button>
                 <input type="range" id="time-slider" min="0" max="100" value="0">
                 <span id="time-display">0</span>
+                <label for="speed-slider" style="margin-left: 20px;">Speed:</label>
+                <input type="range" id="speed-slider" min="1" max="50" value="10" style="flex-grow: 0; width: 100px;">
+                <span id="speed-display">1.0x</span>
             </div>
-            <div id="plot-xy"></div>
+            <div class="plots-horizontal">
+                <div id="plot-xy" class="plot-main"></div>
+                <div id="plot-local" class="plot-main"></div>
+            </div>
         </div>
 
-        <div class="states-grid">
-            <div class="card"><div id="plot-v" class="plot-small"></div></div>
-            <div class="card"><div id="plot-phi" class="plot-small"></div></div>
-            <div class="card"><div id="plot-inputs" class="plot-small"></div></div>
-            <div class="card"><div id="plot-progress" class="plot-small"></div></div>
+        <div id="plots-container" class="states-grid">
+            <!-- Plots will be dynamically inserted here or explicitly defined -->
+            <div class="card">
+                <div id="plot-phi" class="plot-small"></div>
+            </div>
+            <div class="card">
+                <div id="plot-vx" class="plot-small"></div>
+            </div>
+            <div class="card">
+                <div id="plot-vy" class="plot-small"></div>
+            </div>
+            <div class="card">
+                <div id="plot-r" class="plot-small"></div>
+            </div>
+            <div class="card">
+                <div id="plot-s" class="plot-small"></div>
+            </div>
+            <div class="card">
+                <div id="plot-D" class="plot-small"></div>
+            </div>
+            <div class="card">
+                <div id="plot-B" class="plot-small"></div>
+            </div>
+            <div class="card">
+                <div id="plot-delta" class="plot-small"></div>
+            </div>
+            <div class="card">
+                <div id="plot-vs" class="plot-small"></div>
+            </div>
+            <div class="card">
+                <div id="plot-dD" class="plot-small"></div>
+            </div>
+            <div class="card">
+                <div id="plot-dB" class="plot-small"></div>
+            </div>
+            <div class="card">
+                <div id="plot-dDelta" class="plot-small"></div>
+            </div>
+            <div class="card">
+                <div id="plot-dVs" class="plot-small"></div>
+            </div>
         </div>
     </div>
 
@@ -60,17 +162,30 @@
             }
         }
 
+        function createPlot(id, title, x, y, name) {
+            Plotly.newPlot(id, [{
+                x: x,
+                y: y,
+                name: name,
+                line: { color: '#007bff' }
+            }], {
+                title: title,
+                margin: { l: 40, r: 20, t: 40, b: 30 },
+                xaxis: { title: 'step' }
+            });
+        }
+
         function initPlots() {
             if (!rawData) return;
-            
+
             const track = rawData.track;
             const log = rawData.log;
-            
+
             // XY Plot
             const traceCenter = { x: track.X, y: track.Y, mode: 'lines', name: 'Center', line: { color: 'red', dash: 'dash' } };
             const traceInner = { x: track.X_inner, y: track.Y_inner, mode: 'lines', name: 'Inner', line: { color: 'black' } };
             const traceOuter = { x: track.X_outer, y: track.Y_outer, mode: 'lines', name: 'Outer', line: { color: 'black' } };
-            
+
             const trajX = log.map(step => step.x);
             const trajY = log.map(step => step.y);
             const traceTraj = { x: trajX, y: trajY, mode: 'lines', name: 'Trajectory', line: { color: 'blue' } };
@@ -81,42 +196,43 @@
                 marker: { size: 10, color: 'magenta' },
                 text: ['Car'], textposition: 'top center'
             };
-            
+
             // Horizon
             const horizonX = log[0].horizon_x;
             const horizonY = log[0].horizon_y;
             const traceHorizon = { x: horizonX, y: horizonY, mode: 'lines', name: 'Horizon', line: { color: 'green' } };
 
-            const layoutXY = { 
-                title: 'XY Trajectory', 
-                xaxis: { title: 'X [m]', scaleanchor: 'y', scaleratio: 1 }, 
+            const layoutXY = {
+                title: 'XY Trajectory',
+                xaxis: { title: 'X [m]', scaleanchor: 'y', scaleratio: 1 },
                 yaxis: { title: 'Y [m]' },
                 hovermode: 'closest'
             };
 
             Plotly.newPlot('plot-xy', [traceCenter, traceInner, traceOuter, traceTraj, traceHorizon, carMarker], layoutXY);
 
-            // States Plots
-            const steps = log.map((_, i) => i);
-            
-            // Velocity
-            Plotly.newPlot('plot-v', [
-                { x: steps, y: log.map(s => s.vx), name: 'vx' },
-                { x: steps, y: log.map(s => s.vy), name: 'vy' },
-                { x: steps, y: log.map(s => s.r), name: 'r' }
-            ], { title: 'Velocities & Yaw Rate' });
+            // Local View Plot
+            const layoutLocal = JSON.parse(JSON.stringify(layoutXY));
+            layoutLocal.title = 'Local View (Horizon)';
+            Plotly.newPlot('plot-local', [traceCenter, traceInner, traceOuter, traceTraj, traceHorizon, carMarker], layoutLocal);
 
-            // Inputs
-            Plotly.newPlot('plot-inputs', [
-                { x: steps, y: log.map(s => s.D), name: 'D' },
-                { x: steps, y: log.map(s => s.delta), name: 'delta' },
-                { x: steps, y: log.map(s => s.vs), name: 'vs' }
-            ], { title: 'Inputs' });
+            // Individual Plots
+            const steps = log.map((_, i) => i);
+            const stateNames = ['phi', 'vx', 'vy', 'r', 's', 'D', 'B', 'delta', 'vs'];
+            const inputNames = ['dD', 'dB', 'dDelta', 'dVs'];
+
+            stateNames.forEach(name => {
+                createPlot(`plot-${name}`, `State: ${name}`, steps, log.map(s => s[name]), name);
+            });
+
+            inputNames.forEach(name => {
+                createPlot(`plot-${name}`, `Input: ${name}`, steps, log.map(s => s[name]), name);
+            });
 
             // Slider setup
             const slider = document.getElementById('time-slider');
             slider.max = log.length - 1;
-            slider.oninput = function() {
+            slider.oninput = function () {
                 currentIndex = parseInt(this.value);
                 updateFrame(currentIndex);
             };
@@ -128,22 +244,39 @@
             if (!rawData) return;
             const log = rawData.log;
             if (index >= log.length) index = log.length - 1;
-            
+
             const step = log[index];
             document.getElementById('time-display').innerText = index;
             document.getElementById('time-slider').value = index;
 
             // Update Car & Horizon
-            Plotly.animate('plot-xy', {
-                data: [
-                    { x: [step.x], y: [step.y] }, // Car (Index 5)
-                    { x: step.horizon_x, y: step.horizon_y } // Horizon (Index 4)
-                ],
-                traces: [5, 4]
-            }, {
-                transition: { duration: 0 },
-                frame: { duration: 0, redraw: false }
-            });
+            const update = {
+                x: [[step.x], step.horizon_x],
+                y: [[step.y], step.horizon_y]
+            };
+            const traces = [5, 4];
+
+            // Update BOTH views using Plotly.update for consistency
+            Plotly.update('plot-xy', update, {}, traces);
+
+            // Local View Update with Auto-Scaling
+            const xMin = Math.min(...step.horizon_x);
+            const xMax = Math.max(...step.horizon_x);
+            const yMin = Math.min(...step.horizon_y);
+            const yMax = Math.max(...step.horizon_y);
+
+            const xCenter = (xMax + xMin) / 2;
+            const yCenter = (yMax + yMin) / 2;
+            const spanX = (xMax - xMin) * 1.2;
+            const spanY = (yMax - yMin) * 1.2;
+            const span = Math.max(spanX, spanY, 15.0) / 2.0; // Minimum 15m span
+
+            const layoutUpdate = {
+                'xaxis.range': [xCenter - span, xCenter + span],
+                'yaxis.range': [yCenter - span, yCenter + span]
+            };
+
+            Plotly.update('plot-local', update, layoutUpdate, traces);
         }
 
         function togglePlay() {
@@ -160,10 +293,19 @@
                 currentIndex = 0;
             }
             updateFrame(currentIndex);
-            requestAnimationFrame(animate);
+
+            const speed = parseFloat(document.getElementById('speed-slider').value) / 10.0;
+            document.getElementById('speed-display').innerText = speed.toFixed(1) + 'x';
+
+            // Base delay is 50ms (20fps), adjusted by speed
+            const delay = 50 / speed;
+            setTimeout(() => {
+                animationFrame = requestAnimationFrame(animate);
+            }, delay);
         }
 
         fetchData();
     </script>
 </body>
+
 </html>

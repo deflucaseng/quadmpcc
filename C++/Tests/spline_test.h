@@ -17,12 +17,11 @@
 #ifndef MPCC_SPLINE_TEST_H
 #define MPCC_SPLINE_TEST_H
 
-
-#include "config.h"
-#include "Spline/cubic_spline.h"
+#include "Config/config.h"
 #include "Spline/arc_length_spline.h"
-namespace mpcc{
+#include "Spline/cubic_spline.h"
+namespace mpcc {
 int testSpline();
 int testArcLengthSpline(const PathToJson &path);
-}
-#endif //MPCC_SPLINE_TEST_H
+}  // namespace mpcc
+#endif  // MPCC_SPLINE_TEST_H

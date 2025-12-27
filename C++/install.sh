@@ -17,18 +17,36 @@
 ## Install dependencies
 set -e
 
-## clone matplotlib-cpp
-repository_matplotlib="https://github.com/lava/matplotlib-cpp.git"
-localFolder_matplotlib="External/matplotlib"
-git clone "$repository_matplotlib" "$localFolder_matplotlib"
+# ## clone json
+# repository_json="https://github.com/nlohmann/json.git"
+# localFolder_json="External/Json"
+# git clone --depth 1 "$repository_json" "$localFolder_json"
 
-## clone json
-repository_json="https://github.com/nlohmann/json.git"
-localFolder_json="External/Json"
-git clone --depth 1 "$repository_json" "$localFolder_json"
+# ## clone eigne
+# repository_eigen="https://gitlab.com/libeigen/eigen.git"
+# localFolder_eigen="External/Eigen"
+# git clone --depth 1 "$repository_eigen" "$localFolder_eigen"
 
-## clone eigne
-repository_eigen="https://gitlab.com/libeigen/eigen.git"
-localFolder_eigen="External/Eigen"
-git clone --depth 1 "$repository_eigen" "$localFolder_eigen"
+## clone CppAD
+repository_cppad="https://github.com/coin-or/CppAD.git"
+localFolder_cppad="External/CppAD"
+if [ ! -d "$localFolder_cppad" ]; then
+    git clone --depth 1 "$repository_cppad" "$localFolder_cppad"
+fi
+mkdir -p "$localFolder_cppad/build"
+cd "$localFolder_cppad/build"
+cmake ..
+sudo make install
+cd ../../..
 
+## clone CppADCodeGen
+repository_cppadcodegen="https://github.com/joaoleal/CppADCodeGen.git"
+localFolder_cppadcodegen="External/CppADCodeGen"
+if [ ! -d "$localFolder_cppadcodegen" ]; then
+    git clone --depth 1 "$repository_cppadcodegen" "$localFolder_cppadcodegen"
+fi
+mkdir -p "$localFolder_cppadcodegen/build"
+cd "$localFolder_cppadcodegen/build"
+cmake ..
+sudo make install
+cd ../../..

@@ -14,11 +14,14 @@
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-#include "model.h"
+#include "Model/model.h"
+
 #include <fstream>
 #include <functional>
+#include <iostream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 namespace mpcc {
 Model::Model() : Ts_(1.0) {
   std::cout << "default constructor, not everything is initialized properly"
@@ -37,12 +40,21 @@ Model::Model(double Ts, const PathToJson &path)
   // Check if parameters have changed
   std::hash<std::string> hasher;
 
-  std::ifstream iConfig(path.param_path + "/config.json");
+  std::string base_path =
+      path.param_path.substr(0, path.param_path.find_last_of("/\\"));
+  std::ifstream iConfig(base_path + "/config.json");
+  if (!iConfig.is_open()) {
+    throw std::runtime_error("Could not open config.json at " + base_path +
+                             "/config.json");
+  }
   json jsonConfig;
   iConfig >> jsonConfig;
   size_t current_config_hash = hasher(jsonConfig.dump());
 
-  std::ifstream iModel(path.param_path + "/model.json");
+  std::ifstream iModel(path.param_path);
+  if (!iModel.is_open()) {
+    throw std::runtime_error("Could not open model.json at " + path.param_path);
+  }
   json jsonModel;
   iModel >> jsonModel;
   size_t current_model_hash = hasher(jsonModel.dump());
@@ -57,8 +69,9 @@ Model::Model(double Ts, const PathToJson &path)
 
   if (current_config_hash != stored_config_hash ||
       current_model_hash != stored_model_hash) {
-    throw std::runtime_error("Parameters have changed since last binary "
-                             "generation. Please re-run ADCodeGen.");
+    throw std::runtime_error(
+        "Parameters have changed since last binary "
+        "generation. Please re-run ADCodeGen.");
   }
 }
 
@@ -92,4 +105,4 @@ LinModelMatrix Model::getLinModel(const State &x, const Input &u,
   // discretize the system
   return discretizeModel(x, u, x_next);
 }
-} // namespace mpcc
+}  // namespace mpcc

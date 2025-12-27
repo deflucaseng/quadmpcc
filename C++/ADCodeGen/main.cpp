@@ -1,23 +1,24 @@
 #include <fstream>
-#include <functional>
-#include <iosfwd>
 #include <iostream>
 #include <memory>
-
-#include "Params/params.h"
-#include "ad_dynamics.h"
-#include "config.h"
-#include "types.h"
-#include <cppad/cg.hpp>
-#include <iosfwd>
+#include <string>
 #include <vector>
+
+#include <nlohmann/json.hpp>
+
+#include "ADCodeGen/ad_dynamics.h"
+#include "Config/config.h"
+#include "Config/params.h"
+#include "Config/types.h"
 using json = nlohmann::json;
 
 int main(void) {
   /***************************************************************************
    *                       Use the dynamic library
    **************************************************************************/
-  using namespace mpcc;
+  using mpcc::ADDynamics;
+  using mpcc::C_i_MPC;
+  using mpcc::StateVector;
   std::ifstream iConfig("../../Params/config.json");
   json jsonConfig;
   iConfig >> jsonConfig;

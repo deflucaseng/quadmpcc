@@ -17,56 +17,59 @@
 #ifndef MPCC_COST_H
 #define MPCC_COST_H
 
-#include "config.h"
-#include "types.h"
+#include "Config/config.h"
+#include "Config/types.h"
 #include "Spline/arc_length_spline.h"
 #include "Spline/boost_splines.h"
 
-namespace mpcc{
-struct CostMatrix{
-    Q_MPC Q;
-    R_MPC R;
-    S_MPC S;
-    q_MPC q;
-    r_MPC r;
-    Z_MPC Z;
-    z_MPC z;
+namespace mpcc {
+struct CostMatrix {
+  Q_MPC Q;
+  R_MPC R;
+  S_MPC S;
+  q_MPC q;
+  r_MPC r;
+  Z_MPC Z;
+  z_MPC z;
 };
 
-struct TrackPoint{
-    const double x_ref;
-    const double y_ref;
-    const double dx_ref;
-    const double dy_ref;
-    const double theta_ref;
-    const double dtheta_ref;
+struct TrackPoint {
+  const double x_ref;
+  const double y_ref;
+  const double dx_ref;
+  const double dy_ref;
+  const double theta_ref;
+  const double dtheta_ref;
 };
 
-struct ErrorInfo{
-    const Eigen::Matrix<double,1,2> error;
-    const Eigen::Matrix<double,2,NX> d_error;
+struct ErrorInfo {
+  const Eigen::Matrix<double, 1, 2> error;
+  const Eigen::Matrix<double, 2, NX> d_error;
 };
 
 class Cost {
-public:
-    CostMatrix getCost(const BoostSplines &track, const State &x, const Input &u,int k) const;
+ public:
+  CostMatrix getCost(const BoostSplines &track, const State &x, const Input &u,
+                     int k) const;
 
-    Cost(const PathToJson &path);
-    Cost();
+  explicit Cost(const PathToJson &path);
+  Cost();
 
-private:
-    TrackPoint getRefPoint(const BoostSplines &track,const State &x) const;
-    ErrorInfo  getErrorInfo(const BoostSplines &track,const State &x) const;
+ private:
+  TrackPoint getRefPoint(const BoostSplines &track, const State &x) const;
+  ErrorInfo getErrorInfo(const BoostSplines &track, const State &x) const;
 
-    CostMatrix getContouringCost(const BoostSplines &track, const State &x,int k) const;
-    CostMatrix getHeadingCost(const BoostSplines &track, const State &x,int k) const;
-    CostMatrix getInputCost() const;
-    CostMatrix getBetaCost(const State &x) const;
-    CostMatrix getBetaKinCost(const State &x) const;
-    CostMatrix getSoftConstraintCost() const;
+  CostMatrix getContouringCost(const BoostSplines &track, const State &x,
+                               int k) const;
+  CostMatrix getHeadingCost(const BoostSplines &track, const State &x,
+                            int k) const;
+  CostMatrix getInputCost() const;
+  CostMatrix getBetaCost(const State &x) const;
+  CostMatrix getBetaKinCost(const State &x) const;
+  CostMatrix getSoftConstraintCost() const;
 
-    CostParam cost_param_;
-    Param param_;
+  CostParam cost_param_;
+  Param param_;
 };
-}
-#endif //MPCC_COST_H
+}  // namespace mpcc
+#endif  // MPCC_COST_H
