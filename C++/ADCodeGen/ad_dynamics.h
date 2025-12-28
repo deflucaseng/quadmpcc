@@ -2,8 +2,8 @@
 // Created by alexliniger on 24.07.20.
 //
 
-#ifndef CPPAD_TEST_AD_DYNAMICS_H
-#define CPPAD_TEST_AD_DYNAMICS_H
+#ifndef MPCC_ADCODEGEN_AD_DYNAMICS_H
+#define MPCC_ADCODEGEN_AD_DYNAMICS_H
 
 #include <iosfwd>
 #include <string>
@@ -30,11 +30,13 @@ struct NormalForces {
   ADCG F_N_rear;
 };
 
+enum class IntegratorType { RK4, ForwardEuler };
+
 class ADDynamics {
  public:
   ADDynamics();
   ADDynamics(double Ts, const std::string &path);
-  void genLibraryRK4();
+  void genLibraryIntegrator(IntegratorType type, int n_steps);
   void genLibraryGetF();
   void genLibraryTireFront();
   void genLibraryTireRear();
@@ -55,7 +57,11 @@ class ADDynamics {
   NormalForces getForceNormalDyn(std::vector<ADCG> x);
 
   std::vector<ADCG> dx(std::vector<ADCG> x, std::vector<ADCG> u);
-  std::vector<ADCG> RK4(std::vector<ADCG> x);
+  std::vector<ADCG> RK4(std::vector<ADCG> x, std::vector<ADCG> u, double dt);
+  std::vector<ADCG> ForwardEuler(std::vector<ADCG> x, std::vector<ADCG> u,
+                                 double dt);
+  std::vector<ADCG> Integrate(std::vector<ADCG> x, std::vector<ADCG> u,
+                              IntegratorType type, int n_steps);
   std::vector<ADCG> f_dyn(std::vector<ADCG> x);
 
   std::vector<ADCG> TireConFront(std::vector<ADCG> x);
@@ -66,4 +72,4 @@ class ADDynamics {
 };
 }  // namespace mpcc
 
-#endif  // CPPAD_TEST_AD_DYNAMICS_H
+#endif  // MPCC_ADCODEGEN_AD_DYNAMICS_H

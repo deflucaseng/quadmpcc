@@ -79,8 +79,8 @@ class Model {
   LinModelMatrix discretizeModel(const State &x, const Input &u,
                                  const State &x_next) const;
 
-  std::unique_ptr<CppAD::cg::LinuxDynamicLib<double>> RK4_lib_;
-  std::unique_ptr<CppAD::cg::GenericModel<double>> RK4_model_;
+  std::unique_ptr<CppAD::cg::LinuxDynamicLib<double>> integrator_lib_;
+  std::unique_ptr<CppAD::cg::GenericModel<double>> integrator_model_;
 
   std::unique_ptr<CppAD::cg::LinuxDynamicLib<double>> f_dyn_lib_;
   std::unique_ptr<CppAD::cg::GenericModel<double>> f_dyn_model_;

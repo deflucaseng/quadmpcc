@@ -30,13 +30,6 @@ Model::Model() : Ts_(1.0) {
 
 Model::Model(double Ts, const PathToJson &path)
     : Ts_(Ts), param_(Param(path.param_path)) {
-  RK4_lib_ = (std::make_unique<CppAD::cg::LinuxDynamicLib<double>>(
-      path.adcodegen_path + "/cppad_cg_RK4.so"));
-  f_dyn_lib_ = (std::make_unique<CppAD::cg::LinuxDynamicLib<double>>(
-      path.adcodegen_path + "/cppad_cg_f_dyn.so"));
-  RK4_model_ = RK4_lib_->model("RK4");
-  f_dyn_model_ = f_dyn_lib_->model("f_dyn");
-
   // Check if parameters have changed
   std::hash<std::string> hasher;
 
@@ -50,6 +43,14 @@ Model::Model(double Ts, const PathToJson &path)
   json jsonConfig;
   iConfig >> jsonConfig;
   size_t current_config_hash = hasher(jsonConfig.dump());
+
+  std::string integrator_name = "RK4";
+  if (jsonConfig.contains("integrator")) {
+    std::string int_str = jsonConfig["integrator"];
+    if (int_str == "Euler" || int_str == "ForwardEuler") {
+      integrator_name = "Euler";
+    }
+  }
 
   std::ifstream iModel(path.param_path);
   if (!iModel.is_open()) {
@@ -73,6 +74,13 @@ Model::Model(double Ts, const PathToJson &path)
         "Parameters have changed since last binary "
         "generation. Please re-run ADCodeGen.");
   }
+
+  integrator_lib_ = (std::make_unique<CppAD::cg::LinuxDynamicLib<double>>(
+      path.adcodegen_path + "/cppad_cg_" + integrator_name + ".so"));
+  f_dyn_lib_ = (std::make_unique<CppAD::cg::LinuxDynamicLib<double>>(
+      path.adcodegen_path + "/cppad_cg_f_dyn.so"));
+  integrator_model_ = integrator_lib_->model(integrator_name);
+  f_dyn_model_ = f_dyn_lib_->model("f_dyn");
 }
 
 StateVector Model::getF(const State &x, const Input &u) const {
@@ -87,16 +95,16 @@ LinModelMatrix Model::discretizeModel(const State &x, const Input &u,
   // std::vector<double> x_v_lin = stateInputToVector(x_lin,u);
   std::vector<double> x_v = stateInputToVector(x, u);
   Eigen::MatrixXd jac_vec = Eigen::Map<Eigen::Matrix<double, NX *(NX + NU), 1>>(
-      (RK4_model_->Jacobian(x_v)).data());
+      (integrator_model_->Jacobian(x_v)).data());
   jac_vec.resize(NX + NU, NX);
   Eigen::MatrixXd jac = jac_vec.transpose();
 
   const A_MPC A_d = jac.block<NX, NX>(0, 0);
   const B_MPC B_d = jac.block<NX, NU>(0, NX);
 
-  StateVector x_RK4 = Eigen::Map<Eigen::Matrix<double, NX, 1>>(
-      (RK4_model_->ForwardZero(x_v)).data());
-  const g_MPC g_d = -stateToVector(x_next) + x_RK4;
+  StateVector x_integrator = Eigen::Map<Eigen::Matrix<double, NX, 1>>(
+      (integrator_model_->ForwardZero(x_v)).data());
+  const g_MPC g_d = -stateToVector(x_next) + x_integrator;
   return {A_d, B_d, g_d};
 }
 

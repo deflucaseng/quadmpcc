@@ -27,30 +27,36 @@ ADDynamics::ADDynamics() : Ts_(1.0) {
 }
 ADDynamics::ADDynamics(double Ts, const std::string &path)
     : Ts_(Ts), param_(path) {}
-void ADDynamics::genLibraryRK4() {
+void ADDynamics::genLibraryIntegrator(IntegratorType type, int n_steps) {
   // independent variable vector
   std::vector<ADCG> z(NX + NU);
   for (int i = 0; i < NX + NU; i++) z[i] = 0.0;
   z[3] = 10.;
   Independent(z);
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // RK4
-  // dependent variable vector
+
+  std::vector<ADCG> x(NX);
+  std::vector<ADCG> u(NU);
+  for (int i = 0; i < NX; i++) x[i] = z[i];
+  for (int i = 0; i < NU; i++) u[i] = z[i + NX];
+
+  // Integrate
   std::vector<ADCG> x_plus(NX);
-  // the model equation
-  x_plus = RK4(z);
+  x_plus = Integrate(x, u, type, n_steps);
   ADFun<CGD> fun(z, x_plus);
 
+  std::string name = (type == IntegratorType::RK4) ? "RK4" : "Euler";
+  std::string lib_name = "cppad_cg_" + name;
+
   // generates source code
-  ModelCSourceGen<double> cgen(fun, "RK4");
+  ModelCSourceGen<double> cgen(fun, name);
   cgen.setCreateJacobian(true);
   ModelLibraryCSourceGen<double> libcgen(cgen);
 
   // compile source code
-  DynamicModelLibraryProcessor<double> p(libcgen, "cppad_cg_RK4");
+  DynamicModelLibraryProcessor<double> p(libcgen, lib_name);
 
   GccCompiler<double> compiler;
-  std::unique_ptr<DynamicLib<double>> dynamicLibRK4 =
+  std::unique_ptr<DynamicLib<double>> dynamicLib =
       p.createDynamicLibrary(compiler);
 
   // save to files (not really required)
@@ -276,33 +282,39 @@ std::vector<ADCG> ADDynamics::dx(std::vector<ADCG> x, std::vector<ADCG> u) {
   return dx;
 }
 
-std::vector<ADCG> ADDynamics::RK4(std::vector<ADCG> z) {
-  std::vector<ADCG> state(NX);
-  std::vector<ADCG> input(NU);
+std::vector<ADCG> ADDynamics::RK4(std::vector<ADCG> x, std::vector<ADCG> u,
+                                  double dt) {
+  std::vector<ADCG> k1 = dx(x, u);
+  std::vector<ADCG> k2 = dx(vectorAdd(x, scalerMult(k1, dt * 0.5)), u);
+  std::vector<ADCG> k3 = dx(vectorAdd(x, scalerMult(k2, dt * 0.5)), u);
+  std::vector<ADCG> k4 = dx(vectorAdd(x, scalerMult(k3, dt)), u);
+
   std::vector<ADCG> y(NX);
-
-  std::vector<ADCG> k1(NX);
-  std::vector<ADCG> k2(NX);
-  std::vector<ADCG> k3(NX);
-  std::vector<ADCG> k4(NX);
-
-  for (int i = 0; i < NX; i++) {
-    state[i] = z[i];
-  }
-  for (int i = 0; i < NU; i++) {
-    input[i] = z[i + NX];
-  }
-
-  k1 = dx(state, input);
-  k2 = dx(vectorAdd(state, scalerMult(k1, Ts_ * 0.5)), input);
-  k3 = dx(vectorAdd(state, scalerMult(k2, Ts_ * 0.5)), input);
-  k4 = dx(vectorAdd(state, scalerMult(k3, Ts_)), input);
-
   for (int i = 0; i < NX; i++)
-    y[i] = state[i] +
-           Ts_ * (k1[i] / 6.0 + k2[i] / 3.0 + k3[i] / 3.0 + k4[i] / 6.0);
+    y[i] = x[i] + dt * (k1[i] / 6.0 + k2[i] / 3.0 + k3[i] / 3.0 + k4[i] / 6.0);
 
   return y;
+}
+
+std::vector<ADCG> ADDynamics::ForwardEuler(std::vector<ADCG> x,
+                                           std::vector<ADCG> u, double dt) {
+  std::vector<ADCG> k1 = dx(x, u);
+  return vectorAdd(x, scalerMult(k1, dt));
+}
+
+std::vector<ADCG> ADDynamics::Integrate(std::vector<ADCG> x,
+                                        std::vector<ADCG> u,
+                                        IntegratorType type, int n_steps) {
+  std::vector<ADCG> x_next = x;
+  double dt = Ts_ / static_cast<double>(n_steps);
+  for (int i = 0; i < n_steps; i++) {
+    if (type == IntegratorType::RK4) {
+      x_next = RK4(x_next, u, dt);
+    } else {
+      x_next = ForwardEuler(x_next, u, dt);
+    }
+  }
+  return x_next;
 }
 std::vector<ADCG> ADDynamics::TireConFront(std::vector<ADCG> x) {
   TireForces tire_forces_front = getForceFront(x);
