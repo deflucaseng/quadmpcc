@@ -29,7 +29,7 @@ int testSpline() {
 
   int NT = 50;   // number of "training" points
   int NV = 100;  // number of validation points
-  x.setLinSpaced(NT, 0, 2 * M_PI);
+  x.setLinSpaced(NT, 0, 2 * PI);
   y.setZero(NT, 1);
   //    std::cout << x.size() << std::endl;
   // set y ot cos(x)
@@ -45,7 +45,7 @@ int testSpline() {
   Eigen::VectorXd dyt, dytt;
   Eigen::VectorXd ddyt, ddytt;
 
-  xt.setLinSpaced(NV, 0, 2 * M_PI);  // test x points
+  xt.setLinSpaced(NV, 0, 2 * PI);  // test x points
   yt.setZero(NV, 1);
   ytt.setZero(NV, 1);
 
@@ -103,12 +103,12 @@ int testArcLengthSpline(const PathToJson &path) {
   // randomly distribute training points around circle
   // generate random agles between [0,2pi]
   phiR.setRandom(NT);
-  phiR = (phiR / 2.0 + 0.5 * Eigen::VectorXd::Ones(NT)) * 2 * M_PI;
+  phiR = (phiR / 2.0 + 0.5 * Eigen::VectorXd::Ones(NT)) * 2 * PI;
   // sort training points
   std::sort(phiR.data(), phiR.data() + phiR.size());
   // fix start and end point
   phiR(0) = 0;
-  phiR(NT - 1) = 2 * M_PI;
+  phiR(NT - 1) = 2 * PI;
   // compute circle points
   for (int i = 0; i < NT; i++) {
     X(i) = std::cos(phiR(i));
@@ -127,7 +127,7 @@ int testArcLengthSpline(const PathToJson &path) {
   // uniformly space validaiton points between [0,2pi]
   Xv.setZero(NV);
   Yv.setZero(NV);
-  phiv.setLinSpaced(NV, 0, 2 * M_PI);
+  phiv.setLinSpaced(NV, 0, 2 * PI);
 
   error.setZero(NV);
 

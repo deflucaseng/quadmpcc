@@ -52,8 +52,8 @@ struct State {
   }
 
   void unwrap(double track_length) {
-    while (phi > M_PI) phi -= 2.0 * M_PI;
-    while (phi < -M_PI) phi += 2.0 * M_PI;
+    while (phi > PI) phi -= 2.0 * PI;
+    while (phi < -PI) phi += 2.0 * PI;
 
     s = fmod(s, track_length);
     if (s < 0) s += track_length;
@@ -99,35 +99,35 @@ struct PathToJson {
   const std::string adcodegen_path;
 };
 
-typedef Eigen::Matrix<double, NX, 1> StateVector;
-typedef Eigen::Matrix<double, NU, 1> InputVector;
+using StateVector = Eigen::Matrix<double, NX, 1>;
+using InputVector = Eigen::Matrix<double, NU, 1>;
 
-typedef Eigen::Matrix<double, NX, NX> A_MPC;
-typedef Eigen::Matrix<double, NX, NU> B_MPC;
-typedef Eigen::Matrix<double, NX, 1> g_MPC;
+using A_MPC = Eigen::Matrix<double, NX, NX>;
+using B_MPC = Eigen::Matrix<double, NX, NU>;
+using g_MPC = Eigen::Matrix<double, NX, 1>;
 
-typedef Eigen::Matrix<double, NX, NX> Q_MPC;
-typedef Eigen::Matrix<double, NU, NU> R_MPC;
-typedef Eigen::Matrix<double, NX, NU> S_MPC;
+using Q_MPC = Eigen::Matrix<double, NX, NX>;
+using R_MPC = Eigen::Matrix<double, NU, NU>;
+using S_MPC = Eigen::Matrix<double, NX, NU>;
 
-typedef Eigen::Matrix<double, NX, 1> q_MPC;
-typedef Eigen::Matrix<double, NU, 1> r_MPC;
+using q_MPC = Eigen::Matrix<double, NX, 1>;
+using r_MPC = Eigen::Matrix<double, NU, 1>;
 
-typedef Eigen::Matrix<double, NPC, NX> C_MPC;
-typedef Eigen::Matrix<double, 1, NX> C_i_MPC;
-typedef Eigen::Matrix<double, NPC, NU> D_MPC;
-typedef Eigen::Matrix<double, NPC, 1> d_MPC;
+using C_MPC = Eigen::Matrix<double, NPC, NX>;
+using C_i_MPC = Eigen::Matrix<double, 1, NX>;
+using D_MPC = Eigen::Matrix<double, NPC, NU>;
+using d_MPC = Eigen::Matrix<double, NPC, 1>;
 
-typedef Eigen::Matrix<double, NS, NS> Z_MPC;
-typedef Eigen::Matrix<double, NS, 1> z_MPC;
+using Z_MPC = Eigen::Matrix<double, NS, NS>;
+using z_MPC = Eigen::Matrix<double, NS, 1>;
 
-typedef Eigen::Matrix<double, NX, NX> TX_MPC;
-typedef Eigen::Matrix<double, NU, NU> TU_MPC;
-typedef Eigen::Matrix<double, NS, NS> TS_MPC;
+using TX_MPC = Eigen::Matrix<double, NX, NX>;
+using TU_MPC = Eigen::Matrix<double, NU, NU>;
+using TS_MPC = Eigen::Matrix<double, NS, NS>;
 
-typedef Eigen::Matrix<double, NX, 1> Bounds_x;
-typedef Eigen::Matrix<double, NU, 1> Bounds_u;
-typedef Eigen::Matrix<double, NS, 1> Bounds_s;
+using Bounds_x = Eigen::Matrix<double, NX, 1>;
+using Bounds_u = Eigen::Matrix<double, NU, 1>;
+using Bounds_s = Eigen::Matrix<double, NS, 1>;
 
 StateVector stateToVector(const State &x);
 InputVector inputToVector(const Input &u);

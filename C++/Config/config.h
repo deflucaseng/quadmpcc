@@ -18,26 +18,26 @@
 #define MPCC_CONFIG_H
 
 #include <Eigen/Dense>
+#include <numbers>
+
 #include <cmath>
 #include <fstream>
 #include <iostream>
 #include <string>
-// #include <unsupported/Eigen/MatrixFunctions>
 
 namespace mpcc {
 
-// #define MAX(a,b) (a < b) ? b : a
+static constexpr int NX = 11;
+static constexpr int NU = 4;
 
-#define NX 11
-#define NU 4
-
-#define NB 15  // max number of bounds
-#define NPC 3  // number of polytopic constraints
-#define NS 3
+static constexpr int NB = 15;  // max number of bounds
+static constexpr int NPC = 3;  // number of polytopic constraints
+static constexpr int NS = 3;
 
 static constexpr int N = 100;
 static constexpr double INF = 1E5;
 static constexpr int N_SPLINE = 5000;
+static constexpr double PI = std::numbers::pi;
 
 struct StateInputIndex {
   int X = 0;

@@ -29,7 +29,7 @@ MPC::MPC(int n_sqp, int n_reset, double sqp_mixing, double Ts,
          const PathToJson &path)
     : Ts_(Ts),
       valid_initial_guess_(false),
-      solver_interface_(new HpipmInterface()),
+      solver_interface_(std::make_unique<HpipmInterface>()),
       param_(Param(path.param_path)),
       normalization_param_(NormalizationParam(path.normalization_path)),
       bounds_(BoundsParam(path.bounds_path), path),
@@ -165,11 +165,11 @@ void MPC::updateInitialGuess(const State &x0) {
 void MPC::unwrapInitialGuess() {
   double L = track_.getLength();
   for (int i = 1; i <= N; i++) {
-    if ((initial_guess_[i].xk.phi - initial_guess_[i - 1].xk.phi) < -M_PI) {
-      initial_guess_[i].xk.phi += 2. * M_PI;
+    if ((initial_guess_[i].xk.phi - initial_guess_[i - 1].xk.phi) < -PI) {
+      initial_guess_[i].xk.phi += 2. * PI;
     }
-    if ((initial_guess_[i].xk.phi - initial_guess_[i - 1].xk.phi) > M_PI) {
-      initial_guess_[i].xk.phi -= 2. * M_PI;
+    if ((initial_guess_[i].xk.phi - initial_guess_[i - 1].xk.phi) > PI) {
+      initial_guess_[i].xk.phi -= 2. * PI;
     }
 
     if ((initial_guess_[i].xk.s - initial_guess_[i - 1].xk.s) > L / 2.) {

@@ -15,7 +15,9 @@ IncludeCategories:
     Priority:        0
   - Regex:           '^<.*\.h>$'
     Priority:        1
-  - Regex:           '^<[^.]*>$'
+  - Regex:           '^<(numbers|Eigen/.*)>'
+    Priority:        1
+  - Regex:           '^<[^./]*>$'
     Priority:        2
   - Regex:           '^<.*'
     Priority:        3

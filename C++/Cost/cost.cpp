@@ -204,7 +204,7 @@ CostMatrix Cost::getHeadingCost(const BoostSplines &track, const State &x,
   const double dy_ref = dpos_ref(1);
   // angle of the reference path
   double theta_ref = atan2(dy_ref, dx_ref);
-  theta_ref += 2.0 * M_PI * std::round((x.phi - theta_ref) / (2.0 * M_PI));
+  theta_ref += 2.0 * PI * std::round((x.phi - theta_ref) / (2.0 * PI));
 
   Q_MPC Q_heading_cost = Q_MPC::Zero();
   Q_heading_cost(si_index.phi, si_index.phi) = 2.0 * cost_param_.q_mu;

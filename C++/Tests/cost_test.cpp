@@ -24,10 +24,10 @@ int testCost(const PathToJson &path) {
 
   StateVector xk0_vec, xk1_vec, xk2_vec, xk3_vec, xk4_vec;
   xk0_vec << 1, 0, 0, 2, 0, 0, 0, 0, 0, 0;
-  xk1_vec << 0, 1, 0, 2, 0, 0, M_PI / 2., 0, 0, 0;
-  xk2_vec << -1, 0, 0, 2, 0, 0, M_PI, 0, 0, 0;
-  xk3_vec << -1.2, 0, 0, 2, 0, 0, M_PI, 0, 0, 0;
-  xk4_vec << -1, 0, 0, 2, 0.5, 0, M_PI, 0, 0, 0;
+  xk1_vec << 0, 1, 0, 2, 0, 0, PI / 2., 0, 0, 0;
+  xk2_vec << -1, 0, 0, 2, 0, 0, PI, 0, 0, 0;
+  xk3_vec << -1.2, 0, 0, 2, 0, 0, PI, 0, 0, 0;
+  xk4_vec << -1, 0, 0, 2, 0.5, 0, PI, 0, 0, 0;
   InputVector uk0_vec, uk1_vec, uk2_vec, uk3_vec, uk4_vec;
   uk0_vec << 0, 0, 0;
   uk1_vec << 0, 0, 0;

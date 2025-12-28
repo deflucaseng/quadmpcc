@@ -31,14 +31,14 @@ void genRoundTrack(ArcLengthSpline *track) {
   //    // randomly distribute training points around circle
   //    // generate random agles between [0,2pi]
   //    phiR.setRandom(NT);
-  //    phiR = (phiR/2.0+0.5*Eigen::VectorXd::Ones(NT))*2*M_PI;
+  //    phiR = (phiR/2.0+0.5*Eigen::VectorXd::Ones(NT))*2*PI;
   //    // sort training points
   //    std::sort(phiR.data(), phiR.data()+phiR.size());
   //    // fix start and end point
   //    phiR(0) = 0;
-  //    phiR(NT-1) = 2*M_PI;
+  //    phiR(NT-1) = 2*PI;
   // generate equally spaced points around circle
-  phiR.setLinSpaced(NT, 0, 2 * M_PI);
+  phiR.setLinSpaced(NT, 0, 2 * PI);
   // compute circle points
   for (int i = 0; i < NT; i++) {
     X(i) = TrackRadius * std::cos(phiR(i));
@@ -54,7 +54,7 @@ void genRoundTrack(ArcLengthSpline *track) {
   //        Yv[i] = Y(i);
   //    }
   //    Eigen::VectorXd s;
-  //    s.setLinSpaced(NT*10,0,2*M_PI);
+  //    s.setLinSpaced(NT*10,0,2*PI);
   //    for(int i=0;i<10*NT;i++){
   //        Xsv[i] = track.splineX.ppval(s(i));
   //        Ysv[i] = track.splineY.ppval(s(i));
