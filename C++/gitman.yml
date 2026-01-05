@@ -1,0 +1,17 @@
+location: External
+sources:
+  - repo: https://github.com/nlohmann/json.git
+    name: json
+    rev: v3.12.0
+  - repo: https://github.com/coin-or/CppAD.git
+    name: CppAD
+    rev: 20260000.0
+  - repo: https://github.com/joaoleal/CppADCodeGen.git
+    name: CppADCodeGen
+    rev: 80430a64e863ed09c2293db5408998089ef8afcb
+  - repo: https://github.com/giaf/blasfeo.git
+    name: blasfeo
+    rev: 0.1.4.2
+  - repo: https://github.com/giaf/hpipm.git
+    name: hpipm
+    rev: f7951846e9240fa05cdb3116b8cd5d60acaff09a
