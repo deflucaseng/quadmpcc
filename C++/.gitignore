@@ -1,12 +1,10 @@
-# Project specific excludes
-/External/
-/MPCC
-
-# CMake
-CMakeCache.txt
-CMakeFiles/
-Makefile
-cmake_install.cmake
-
-# Pre-commit
+build/
+cmake-build-*/
+External/
+Generated/
+build_docker/
+.gitman_cache/
+.idea/
+.DS_Store
+*.swp
 pre_commit_output.txt

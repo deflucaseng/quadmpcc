@@ -38,25 +38,68 @@ There is no obstacle avoidance available yet in the C++ version
 ### Options
 Currently, only one track and car model is implemented. However, adapting the parameters only requires changing the json files in the Params folder.
 
-## Installation
+## Installation & Setup
 
-To install all the dependencies run
-```
-./install.sh
-```
-this clones `blasfeo`, `hpipm`, `matplotlip-cpp`, `nlohmann/json`, and `eigen`, from their git repo, and safes them in a folder External. Additionally, it installs `blasfeo` and `hpipm` in the same External folder, thus no admin rights are necessary.
+### Docker (Recommended)
+The easiest way to get started is using Docker, which comes pre-configured with all dependencies.
 
-Note that `matplotlib-cpp` does also require `Python-2.7` and `matplotlib`, for more details see (https://github.com/lava/matplotlib-cpp).
+1. **Run the container**:
+   ```bash
+   bash docker_run.sh
+   ```
+   This script will mount the repository, install pre-commit hooks, and fetch dependencies via `gitman` automatically on the first run.
 
-Once all dependencies are installed `cmake` can be used to build the project
+### Local Installation
+If you prefer to run locally, you will need `cmake`, `git`, `python3`, and `gitman`.
+
+1. **Install Gitman & Pre-commit**:
+   ```bash
+   pip install gitman pre-commit
+   ```
+
+2. **Fetch Dependencies**:
+   ```bash
+   gitman install
+   ```
+   This will download all external libraries into the `External/` directory.
+
+3. **Install Pre-commit Hooks**:
+   ```bash
+   pre-commit install --config .pre-commit-config.yaml
+   ```
+
+## Building
+
+Once dependencies are fetched, build the project using CMake.
+```bash
+mkdir -p build && cd build
+cmake ..
+make -j$(nproc)
 ```
-cmake CMakeLists.txt
-make
+> [!TIP]
+> If you build both inside and outside of Docker, it is recommended to use different build directories (e.g., `build` and `build_docker`) to avoid CMake cache conflicts.
+> [!NOTE]
+> If you encounter Eigen-related compilation errors with GCC 13, the build system is configured to automatically fetch a compatible version.
+> [!NOTE]
+> If you use a different target than X64_INTEL_HASWELL, you need to set the target in the CMake command line, e.g., `cmake .. -DTARGET=ARMV8A_APPLE_M1`.
+
+## Usage
+
+### 1. Generating the Model (ADCodeGen)
+If you have modified the model equations or parameters, you need to re-generate the C++ code for the dynamics:
+```bash
+# Inside the build directory
+./ADCodeGen/ADCodeGen
 ```
-To run the code simply execute the `MPCC`
-```
+This tool reads the configuration files from `Params/` and generates optimized code in the `Generated/` folder.
+
+### 2. Running the MPCC Controller
+Run the main executable to start the simulation:
+```bash
+# Inside the build directory
 ./MPCC
 ```
+The output will be saved to the `visualization/` directory.
 
 ### TODO
 

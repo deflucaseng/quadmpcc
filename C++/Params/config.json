@@ -5,14 +5,12 @@
   "n_sim": 2000,
   "Ts": 0.05,
   "v0": 10.0,
-
   "integrator": "RK4",
   "n_steps": 2,
-
   "model_path": "Params/model.json",
   "cost_path": "Params/cost.json",
   "bounds_path": "Params/bounds.json",
   "track_path": "Params/track_processed.json",
   "normalization_path": "Params/normalization.json",
-  "adcodegen_path": "ADCodeGen/build"
+  "adcodegen_path": "Generated"
 }

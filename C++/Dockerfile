@@ -16,14 +16,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake \
     git \
     wget \
+    ca-certificates \
     sudo \
     python3 \
-    python3-dev \
     python3-pip \
     python3-venv \
-    python3-numpy \
     libgtest-dev \
     libeigen3-dev \
+    libboost-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Setup Python virtual environment
@@ -31,13 +31,16 @@ ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Install Python packages in the virtual environment
+# Install Python packages and gitman
 RUN pip install --no-cache-dir \
     pre-commit \
     cpplint \
     black \
     flake8 \
-    numpy
+    gitman
+
+# Copy Gitman config and install dependencies
+
 
 
 # Setup non-root user

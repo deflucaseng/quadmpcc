@@ -25,8 +25,13 @@ ADDynamics::ADDynamics() : Ts_(1.0) {
   std::cout << "default constructor, not everything is initialized properly"
             << std::endl;
 }
-ADDynamics::ADDynamics(double Ts, const std::string &path)
-    : Ts_(Ts), param_(path) {}
+ADDynamics::ADDynamics(double Ts, const std::string &path,
+                       const std::string &outputPath)
+    : Ts_(Ts), param_(path), outputPath_(outputPath) {
+  if (outputPath_.back() != '/' && outputPath_.back() != '\\') {
+    outputPath_ += "/";
+  }
+}
 void ADDynamics::genLibraryIntegrator(IntegratorType type, int n_steps) {
   // independent variable vector
   std::vector<ADCG> z(NX + NU);
@@ -53,7 +58,7 @@ void ADDynamics::genLibraryIntegrator(IntegratorType type, int n_steps) {
   ModelLibraryCSourceGen<double> libcgen(cgen);
 
   // compile source code
-  DynamicModelLibraryProcessor<double> p(libcgen, lib_name);
+  DynamicModelLibraryProcessor<double> p(libcgen, outputPath_ + lib_name);
 
   GccCompiler<double> compiler;
   std::unique_ptr<DynamicLib<double>> dynamicLib =
@@ -61,7 +66,7 @@ void ADDynamics::genLibraryIntegrator(IntegratorType type, int n_steps) {
 
   // save to files (not really required)
   SaveFilesModelLibraryProcessor<double> p2(libcgen);
-  p2.saveSources();
+  p2.saveSourcesTo(outputPath_ + "sources");
 }
 
 void ADDynamics::genLibraryGetF() {
@@ -84,7 +89,8 @@ void ADDynamics::genLibraryGetF() {
   ModelLibraryCSourceGen<double> libcgen(cgen);
 
   // compile source code
-  DynamicModelLibraryProcessor<double> p(libcgen, "cppad_cg_f_dyn");
+  DynamicModelLibraryProcessor<double> p(libcgen,
+                                         outputPath_ + "cppad_cg_f_dyn");
 
   GccCompiler<double> compiler;
   std::unique_ptr<DynamicLib<double>> dynamicLibRK4 =
@@ -92,7 +98,7 @@ void ADDynamics::genLibraryGetF() {
 
   // save to files (not really required)
   SaveFilesModelLibraryProcessor<double> p2(libcgen);
-  p2.saveSources();
+  p2.saveSourcesTo(outputPath_ + "sources");
 }
 
 void ADDynamics::genLibraryTireFront() {
@@ -113,7 +119,7 @@ void ADDynamics::genLibraryTireFront() {
   ModelLibraryCSourceGen<double> libcgen(cgen);
 
   // compile source code
-  DynamicModelLibraryProcessor<double> p(libcgen, "cppad_cg_TCF");
+  DynamicModelLibraryProcessor<double> p(libcgen, outputPath_ + "cppad_cg_TCF");
 
   GccCompiler<double> compiler;
   std::unique_ptr<DynamicLib<double>> dynamicLibTireConFront =
@@ -121,7 +127,7 @@ void ADDynamics::genLibraryTireFront() {
 
   // save to files (not really required)
   SaveFilesModelLibraryProcessor<double> p2(libcgen);
-  p2.saveSources();
+  p2.saveSourcesTo(outputPath_ + "sources");
 }
 
 void ADDynamics::genLibraryTireRear() {
@@ -142,7 +148,7 @@ void ADDynamics::genLibraryTireRear() {
   ModelLibraryCSourceGen<double> libcgen(cgen);
 
   // compile source code
-  DynamicModelLibraryProcessor<double> p(libcgen, "cppad_cg_TCR");
+  DynamicModelLibraryProcessor<double> p(libcgen, outputPath_ + "cppad_cg_TCR");
 
   GccCompiler<double> compiler;
   std::unique_ptr<DynamicLib<double>> dynamicLibTireConRear =
@@ -150,7 +156,7 @@ void ADDynamics::genLibraryTireRear() {
 
   // save to files (not really required)
   SaveFilesModelLibraryProcessor<double> p2(libcgen);
-  p2.saveSources();
+  p2.saveSourcesTo(outputPath_ + "sources");
 }
 
 std::vector<ADCG> ADDynamics::scalerMult(std::vector<ADCG> x, double a) {

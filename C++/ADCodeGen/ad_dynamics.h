@@ -35,13 +35,14 @@ enum class IntegratorType { RK4, ForwardEuler };
 class ADDynamics {
  public:
   ADDynamics();
-  ADDynamics(double Ts, const std::string &path);
+  ADDynamics(double Ts, const std::string &path, const std::string &outputPath);
   void genLibraryIntegrator(IntegratorType type, int n_steps);
   void genLibraryGetF();
   void genLibraryTireFront();
   void genLibraryTireRear();
 
  private:
+  std::string outputPath_ = "./";
   std::vector<ADCG> vectorAdd(std::vector<ADCG> x1, std::vector<ADCG> x2);
   std::vector<ADCG> scalerMult(std::vector<ADCG> x, double a);
 

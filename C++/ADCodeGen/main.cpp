@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -20,10 +21,12 @@ using mpcc::si_index;
 using mpcc::StateVector;
 
 bool generateLibraries(const std::string &configPath,
-                       const std::string &modelPath, double Ts, int n_steps) {
-  std::cout << "Generating libraries (Steps: " << n_steps << ")..."
-            << std::endl;
-  ADDynamics ad_dyn(Ts, modelPath);
+                       const std::string &modelPath,
+                       const std::string &outputPath, double Ts, int n_steps) {
+  std::filesystem::create_directories(outputPath);
+  std::cout << "Generating libraries to: " << outputPath
+            << " (Steps: " << n_steps << ")..." << std::endl;
+  ADDynamics ad_dyn(Ts, modelPath, outputPath);
 
   std::cout << "  Generating RK4..." << std::endl;
   ad_dyn.genLibraryIntegrator(IntegratorType::RK4, n_steps);
@@ -55,16 +58,22 @@ bool generateLibraries(const std::string &configPath,
   iModel >> jsonModel;
   size_t model_hash = hasher(jsonModel.dump());
 
-  std::ofstream hashFile("params_hash.txt");
+  std::ofstream hashFile(outputPath + "/params_hash.txt");
+  if (!hashFile.is_open()) {
+    std::cerr << "Error: Could not open " << outputPath
+              << "/params_hash.txt for writing." << std::endl;
+    return false;
+  }
   hashFile << config_hash << " " << model_hash;
   hashFile.close();
   std::cout << "Libraries generated successfully." << std::endl;
   return true;
 }
 
-void verifyGeneratedLibraries(IntegratorType type) {
+void verifyGeneratedLibraries(const std::string &outputPath,
+                              IntegratorType type) {
   std::string model_name = (type == IntegratorType::RK4 ? "RK4" : "Euler");
-  std::string lib_name = "cppad_cg_" + model_name + ".so";
+  std::string lib_name = outputPath + "/cppad_cg_" + model_name + ".so";
   std::cout << "Verifying " << model_name << " library (" << lib_name << ")..."
             << std::endl;
 
@@ -87,7 +96,8 @@ void verifyGeneratedLibraries(IntegratorType type) {
   std::cout << model_name << " ForwardZero:\n" << fw << std::endl;
 
   std::unique_ptr<CppAD::cg::LinuxDynamicLib<double>> cont_dyn_lib =
-      std::make_unique<CppAD::cg::LinuxDynamicLib<double>>("cppad_cg_f_dyn.so");
+      std::make_unique<CppAD::cg::LinuxDynamicLib<double>>(
+          outputPath + "/cppad_cg_f_dyn.so");
   std::unique_ptr<CppAD::cg::GenericModel<double>> model_cont_dyn;
   model_cont_dyn = cont_dyn_lib->model("f_dyn");
   StateVector f =
@@ -113,58 +123,21 @@ std::string resolvePath(const std::string &filename) {
 int main(int argc, char **argv) {
   std::string configPath = "";
   std::string modelPath = "";
+  std::string outputPath = "";
   bool verify = false;
 
   IntegratorType verification_type = IntegratorType::RK4;
   int n_steps = 1;
 
-  // First pass to find config path if provided via CLI
+  // CLI Parsing
   for (int i = 1; i < argc; ++i) {
     std::string arg = argv[i];
     if (arg == "--config" && i + 1 < argc) {
       configPath = argv[++i];
-    }
-  }
-
-  // If not provided via CLI, search for default
-  if (configPath.empty()) {
-    configPath = resolvePath("config.json");
-  }
-
-  if (configPath.empty() || !std::ifstream(configPath).good()) {
-    std::cerr << "Error: Could not find config.json. Searched common locations "
-                 "or invalid path provided."
-              << std::endl;
-    return 1;
-  }
-
-  std::ifstream iConfig(configPath);
-  json jsonConfig;
-  iConfig >> jsonConfig;
-
-  // Resolve model path
-  modelPath = resolvePath("model.json");
-
-  // Load defaults from config
-  if (jsonConfig.contains("integrator")) {
-    std::string int_str = jsonConfig["integrator"];
-    if (int_str == "Euler" || int_str == "ForwardEuler") {
-      verification_type = IntegratorType::ForwardEuler;
-    } else {
-      verification_type = IntegratorType::RK4;
-    }
-  }
-  if (jsonConfig.contains("n_steps")) {
-    n_steps = jsonConfig["n_steps"];
-  }
-
-  // CLI overrides
-  for (int i = 1; i < argc; ++i) {
-    std::string arg = argv[i];
-    if (arg == "--config") {
-      i++;  // already handled
     } else if (arg == "--model" && i + 1 < argc) {
       modelPath = argv[++i];
+    } else if (arg == "--output" && i + 1 < argc) {
+      outputPath = argv[++i];
     } else if (arg == "--verify") {
       verify = true;
     } else if (arg == "--integrator" && i + 1 < argc) {
@@ -179,31 +152,75 @@ int main(int argc, char **argv) {
     } else if (arg == "--help") {
       std::cout << "Usage: ADCodeGen [options]\n"
                 << "Options:\n"
-                << "  --config PATH      Path to config.json (searched "
-                   "automatically if omitted)\n"
-                << "  --model PATH       Path to model.json (searched "
-                   "automatically if omitted)\n"
-                << "  --integrator TYPE  RK4 or Euler (default from config or "
-                   "RK4). Used for verification.\n"
-                << "  --steps N          Number of integration steps (default "
-                   "from config or 1). Applied to both solvers.\n"
-                << "  --verify           Run verification after generation\n"
-                << "  --help             Show this help message\n";
+                << "  --config PATH      Path to config.json\n"
+                << "  --model PATH       Path to model.json\n"
+                << "  --output PATH      Directory for generated libraries\n"
+                << "  --integrator TYPE  RK4 or Euler\n"
+                << "  --steps N          Integration steps\n"
+                << "  --verify           Run verification\n"
+                << "  --help             Show help\n";
       return 0;
     }
   }
 
+  // Resolve defaults
+  if (configPath.empty()) configPath = resolvePath("config.json");
+  if (configPath.empty() || !std::ifstream(configPath).good()) {
+    std::cerr << "Error: Could not find config.json." << std::endl;
+    return 1;
+  }
+
+  std::ifstream iConfig(configPath);
+  json jsonConfig;
+  iConfig >> jsonConfig;
+
+  if (modelPath.empty()) modelPath = resolvePath("model.json");
   if (modelPath.empty() || !std::ifstream(modelPath).good()) {
     std::cerr << "Error: Could not find model.json." << std::endl;
     return 1;
   }
 
-  if (!generateLibraries(configPath, modelPath, jsonConfig["Ts"], n_steps)) {
+  if (outputPath.empty()) {
+    // Determine project root from configPath to handle relative output paths
+    std::string projectRoot = "./";
+    if (configPath.rfind("../../Params/", 0) == 0) {
+      projectRoot = "../../";
+    } else if (configPath.rfind("../Params/", 0) == 0) {
+      projectRoot = "../";
+    }
+
+    if (jsonConfig.contains("adcodegen_path")) {
+      std::string pathInConfig = jsonConfig["adcodegen_path"];
+      // If path is relative, prepend project root
+      if (pathInConfig.length() > 0 && pathInConfig[0] != '/' &&
+          pathInConfig[0] != '.') {
+        outputPath = projectRoot + pathInConfig;
+      } else {
+        outputPath = pathInConfig;
+      }
+    } else {
+      outputPath = projectRoot + "Generated";
+    }
+  }
+
+  // Load defaults from config if not overridden by CLI
+  if (jsonConfig.contains("integrator") && argc == 1) {
+    std::string int_str = jsonConfig["integrator"];
+    if (int_str == "Euler" || int_str == "ForwardEuler") {
+      verification_type = IntegratorType::ForwardEuler;
+    }
+  }
+  if (jsonConfig.contains("n_steps") && argc == 1) {
+    n_steps = jsonConfig["n_steps"];
+  }
+
+  if (!generateLibraries(configPath, modelPath, outputPath, jsonConfig["Ts"],
+                         n_steps)) {
     return 1;
   }
 
   if (verify) {
-    verifyGeneratedLibraries(verification_type);
+    verifyGeneratedLibraries(outputPath, verification_type);
   }
 
   return 0;
