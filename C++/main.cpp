@@ -42,12 +42,13 @@ int main() {
       go_to_path + std::string(jsonConfig["normalization_path"]),
       go_to_path + std::string(jsonConfig["adcodegen_path"])};
 
-  mpcc::Integrator integrator = mpcc::Integrator(jsonConfig["Ts"], json_paths);
-  mpcc::Plotting plotter = mpcc::Plotting(jsonConfig["Ts"], json_paths);
-
   mpcc::Track track = mpcc::Track(json_paths.track_path);
   mpcc::TrackPos track_xy = track.getTrack();
   mpcc::TrackFull track_full = track.getTrackFull();
+
+  mpcc::Integrator integrator = mpcc::Integrator(jsonConfig["Ts"], json_paths);
+  mpcc::Plotting plotter =
+      mpcc::Plotting(jsonConfig["Ts"], json_paths, track_full);
 
   std::list<mpcc::MPCReturn> log;
   mpcc::MPC mpc(jsonConfig["n_sqp"], jsonConfig["n_reset"],

@@ -30,6 +30,7 @@
 #include "Config/types.h"
 #include "MPC/mpc.h"
 #include "Model/model.h"
+#include "Spline/boost_splines.h"
 
 // namespace plt = matplotlibcpp;
 
@@ -39,7 +40,7 @@ class Plotting {
   void plotRun(const std::list<MPCReturn> &log, const TrackPos &track_xy) const;
   void plotSim(const std::list<MPCReturn> &log, const TrackPos &track_xy) const;
 
-  Plotting(double Ts, PathToJson path);
+  Plotting(double Ts, PathToJson path, const TrackFull &track);
 
  private:
   void plotBox(const State &x0) const;
@@ -50,6 +51,7 @@ class Plotting {
   Model model_;
   Constraints constraints_;
   Param param_;
+  BoostSplines track_;
 };
 }  // namespace mpcc
 

@@ -9,10 +9,13 @@
 
 namespace mpcc {
 
-Plotting::Plotting(double Ts, PathToJson path)
+Plotting::Plotting(double Ts, PathToJson path, const TrackFull &track)
     : model_(Model(Ts, path)),
       param_(Param(path.param_path)),
-      constraints_(Constraints(Ts, path)) {}
+      constraints_(Constraints(Ts, path)),
+      track_(BoostSplines(path)) {
+  track_.genSplines(track);
+}
 
 void Plotting::plotRun(const std::list<MPCReturn> &log,
                        const TrackPos &track_xy) const {
@@ -101,6 +104,7 @@ nlohmann::json Plotting::jsonLog(const std::list<MPCReturn> &log) const {
     step["B"] = xk.B;
     step["delta"] = xk.delta;
     step["vs"] = xk.vs;
+    step["kappa"] = track_.getCurvature(xk.s);
 
     // Inputs
     const auto &uk = log_i.u0;
@@ -110,13 +114,49 @@ nlohmann::json Plotting::jsonLog(const std::list<MPCReturn> &log) const {
     step["dVs"] = uk.dVs;
 
     // Horizon
-    std::vector<double> horizon_x, horizon_y;
+    std::vector<double> horizon_x, horizon_y, horizon_phi, horizon_vx,
+        horizon_vy, horizon_r, horizon_s, horizon_D, horizon_B, horizon_delta,
+        horizon_vs, horizon_kappa;
+    std::vector<double> horizon_dD, horizon_dB, horizon_dDelta, horizon_dVs;
     for (const auto &h_step : log_i.mpc_horizon) {
       horizon_x.push_back(h_step.xk.X);
       horizon_y.push_back(h_step.xk.Y);
+      horizon_phi.push_back(h_step.xk.phi);
+      horizon_vx.push_back(h_step.xk.vx);
+      horizon_vy.push_back(h_step.xk.vy);
+      horizon_r.push_back(h_step.xk.r);
+      horizon_s.push_back(h_step.xk.s);
+      horizon_D.push_back(h_step.xk.D);
+      horizon_B.push_back(h_step.xk.B);
+      horizon_delta.push_back(h_step.xk.delta);
+      horizon_vs.push_back(h_step.xk.vs);
+      horizon_kappa.push_back(track_.getCurvature(h_step.xk.s));
+
+      horizon_dD.push_back(h_step.uk.dD);
+      horizon_dB.push_back(h_step.uk.dB);
+      horizon_dDelta.push_back(h_step.uk.dDelta);
+      horizon_dVs.push_back(h_step.uk.dVs);
     }
     step["horizon_x"] = horizon_x;
     step["horizon_y"] = horizon_y;
+    step["horizon_phi"] = horizon_phi;
+    step["horizon_vx"] = horizon_vx;
+    step["horizon_vy"] = horizon_vy;
+    step["horizon_r"] = horizon_r;
+    step["horizon_s"] = horizon_s;
+    step["horizon_D"] = horizon_D;
+    step["horizon_B"] = horizon_B;
+    step["horizon_delta"] = horizon_delta;
+    step["horizon_vs"] = horizon_vs;
+    step["horizon_kappa"] = horizon_kappa;
+
+    step["horizon_dD"] = horizon_dD;
+    step["horizon_dB"] = horizon_dB;
+    step["horizon_dDelta"] = horizon_dDelta;
+    step["horizon_dVs"] = horizon_dVs;
+
+    step["terminal_vx_constraint"] =
+        track_.getVelocity(log_i.mpc_horizon[N].xk.s);
 
     j_log.push_back(step);
   }

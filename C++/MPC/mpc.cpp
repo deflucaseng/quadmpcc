@@ -238,9 +238,8 @@ MPCReturn MPC::runMPC(const State &x0) {
   n_no_solves_sqp_ = 0;
   for (int i = 0; i < n_sqp_; i++) {
     setMPCProblem();
-    State x0_normalized =
-        vectorToState(normalization_param_.T_x_inv *
-                      (stateToVector(x_mpc) - 1.0 * stateToVector(x_mpc)));
+    State x0_normalized;
+    x0_normalized.setZero();
     optimal_solution_ =
         solver_interface_->solveMPC(&stages_, x0_normalized, &solver_status);
     optimal_solution_ = deNormalizeSolution(optimal_solution_);

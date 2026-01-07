@@ -9,7 +9,7 @@
   "qR" : 1E-4,
 
   "qBeta" : 5E1,
-  "betaKin": 1,
+  "betaKin": 1.0,
 
   "rD" : 1E-3,
   "rB" : 1E0,
@@ -19,7 +19,7 @@
   "rdD" : 1E0,
   "rdB" : 1E1,
   "rdDelta" : 1E2,
-  "rdVs" : 1E-3,
+  "rdVs" : 1E-4,
 
   "qCNmult": 1000.0,
   "qRNmult": 1.0,

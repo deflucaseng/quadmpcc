@@ -75,9 +75,20 @@ Eigen::Vector2d BoostSplines::getDerivative(const double s) const {
 }
 
 Eigen::Vector2d BoostSplines::getSecondDerivative(const double s) const {
-  double dds_X = spline_x_.double_prime(unwrapInput(s));
-  double dds_Y = spline_y_.double_prime(unwrapInput(s));
+  double dds_X = spline_y_.double_prime(unwrapInput(s));
+  double dds_Y = spline_x_.double_prime(unwrapInput(s));
   return {dds_X, dds_Y};
+}
+
+double BoostSplines::getCurvature(double s) const {
+  double s_unwrapped = unwrapInput(s);
+  double dx = spline_x_.prime(s_unwrapped);
+  double dy = spline_y_.prime(s_unwrapped);
+  double ddx = spline_x_.double_prime(s_unwrapped);
+  double ddy = spline_y_.double_prime(s_unwrapped);
+  double den = std::pow(dx * dx + dy * dy, 1.5);
+  if (std::abs(den) < 1e-6) return 0.0;
+  return (dx * ddy - dy * ddx) / den;
 }
 
 double BoostSplines::getNLeft(double s) const {

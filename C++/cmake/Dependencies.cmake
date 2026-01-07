@@ -12,7 +12,6 @@ set(CPPAD_MAX_NUM_THREADS 1 CACHE STRING "" FORCE)
 set(EIGEN_BUILD_TESTING OFF CACHE BOOL "" FORCE)
 
 # 1. Eigen3
-# 1. Eigen3
 message(STATUS "Fetching Eigen3 (forcing fetch to avoid GCC 13 compatibility issues with system Eigen)...")
 FetchContent_Declare(eigen
     GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
@@ -67,6 +66,9 @@ endif()
 # 5. BLASFEO
 message(STATUS "Adding blasfeo from External...")
 if(NOT TARGET blasfeo)
+    if(NOT DEFINED TARGET)
+        set(TARGET "GENERIC" CACHE STRING "BLASFEO target architecture")
+    endif()
     set(BLASFEO_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(BLASFEO_TESTING OFF CACHE BOOL "" FORCE)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/External/blasfeo)
@@ -76,7 +78,9 @@ endif()
 message(STATUS "Adding hpipm from External...")
 if(NOT TARGET hpipm)
     set(HPIPM_TESTING OFF CACHE BOOL "" FORCE)
-
+    if(NOT DEFINED HPIPM_TARGET)
+        set(HPIPM_TARGET "GENERIC" CACHE STRING "HPIPM target architecture")
+    endif()
     # Temporarily set TARGET for hpipm
     set(OLD_TARGET "${TARGET}")
     set(TARGET "${HPIPM_TARGET}" CACHE STRING "" FORCE)

@@ -68,10 +68,17 @@
         }
 
         .controls {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 15px 20px;
+            z-index: 1000;
+            border-bottom: 2px solid #ddd;
             margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         input[type="range"] {
@@ -85,16 +92,17 @@
         <h1>MPCC Visualization</h1>
         <div id="status">Loading data...</div>
 
+        <div class="controls">
+            <button id="play-btn">Play</button>
+            <input type="range" id="time-slider" min="0" max="100" value="0">
+            <span id="time-display">0</span>
+            <label for="speed-slider" style="margin-left: 20px;">Speed:</label>
+            <input type="range" id="speed-slider" min="1" max="50" value="10" style="flex-grow: 0; width: 100px;">
+            <span id="speed-display">1.0x</span>
+        </div>
+
         <div class="card">
             <h2>Track & Trajectory</h2>
-            <div class="controls">
-                <button id="play-btn">Play</button>
-                <input type="range" id="time-slider" min="0" max="100" value="0">
-                <span id="time-display">0</span>
-                <label for="speed-slider" style="margin-left: 20px;">Speed:</label>
-                <input type="range" id="speed-slider" min="1" max="50" value="10" style="flex-grow: 0; width: 100px;">
-                <span id="speed-display">1.0x</span>
-            </div>
             <div class="plots-horizontal">
                 <div id="plot-xy" class="plot-main"></div>
                 <div id="plot-local" class="plot-main"></div>
@@ -142,6 +150,9 @@
             <div class="card">
                 <div id="plot-dVs" class="plot-small"></div>
             </div>
+            <div class="card">
+                <div id="plot-kappa" class="plot-small"></div>
+            </div>
         </div>
     </div>
 
@@ -162,16 +173,44 @@
             }
         }
 
-        function createPlot(id, title, x, y, name) {
-            Plotly.newPlot(id, [{
+        function createPlot(id, title, x, y, name, horizonY) {
+            const traceMain = {
                 x: x,
                 y: y,
                 name: name,
                 line: { color: '#007bff' }
-            }], {
+            };
+            const traceHorizon = {
+                x: x.slice(0, horizonY.length), // Temporary X for horizon, will be updated
+                y: horizonY,
+                name: 'Horizon',
+                line: { color: 'green', dash: 'dash' }
+            };
+            const markerCurrent = {
+                x: [x[0]],
+                y: [y[0]],
+                mode: 'markers',
+                name: 'Current',
+                marker: { size: 10, color: 'magenta' }
+            };
+
+            const traces = [traceMain, traceHorizon, markerCurrent];
+            if (name === 'vx') {
+                const markerTerminal = {
+                    x: [0],
+                    y: [0],
+                    mode: 'markers',
+                    name: 'Terminal Constraint',
+                    marker: { size: 10, color: 'red', symbol: 'x' }
+                };
+                traces.push(markerTerminal);
+            }
+
+            Plotly.newPlot(id, traces, {
                 title: title,
                 margin: { l: 40, r: 20, t: 40, b: 30 },
-                xaxis: { title: 'step' }
+                xaxis: { title: 'step' },
+                showlegend: false
             });
         }
 
@@ -218,15 +257,15 @@
 
             // Individual Plots
             const steps = log.map((_, i) => i);
-            const stateNames = ['phi', 'vx', 'vy', 'r', 's', 'D', 'B', 'delta', 'vs'];
+            const stateNames = ['phi', 'vx', 'vy', 'r', 's', 'D', 'B', 'delta', 'vs', 'kappa'];
             const inputNames = ['dD', 'dB', 'dDelta', 'dVs'];
 
             stateNames.forEach(name => {
-                createPlot(`plot-${name}`, `State: ${name}`, steps, log.map(s => s[name]), name);
+                createPlot(`plot-${name}`, `State: ${name}`, steps, log.map(s => s[name]), name, log[0][`horizon_${name}`]);
             });
 
             inputNames.forEach(name => {
-                createPlot(`plot-${name}`, `Input: ${name}`, steps, log.map(s => s[name]), name);
+                createPlot(`plot-${name}`, `Input: ${name}`, steps, log.map(s => s[name]), name, log[0][`horizon_${name}`]);
             });
 
             // Slider setup
@@ -249,34 +288,63 @@
             document.getElementById('time-display').innerText = index;
             document.getElementById('time-slider').value = index;
 
-            // Update Car & Horizon
-            const update = {
-                x: [[step.x], step.horizon_x],
-                y: [[step.y], step.horizon_y]
+            // Zoomed Out View (Full History)
+            const fullHistorySteps = log.slice(0, index + 1);
+            const fullX = fullHistorySteps.map(s => s.x);
+            const fullY = fullHistorySteps.map(s => s.y);
+
+            const updateXY = {
+                x: [fullX, [step.x], step.horizon_x],
+                y: [fullY, [step.y], step.horizon_y]
             };
-            const traces = [5, 4];
+            const tracesXY = [3, 5, 4];
+            Plotly.update('plot-xy', updateXY, {}, tracesXY);
 
-            // Update BOTH views using Plotly.update for consistency
-            Plotly.update('plot-xy', update, {}, traces);
-
-            // Local View Update with Auto-Scaling
+            // Zoomed In View (Last 100 Steps)
             const xMin = Math.min(...step.horizon_x);
             const xMax = Math.max(...step.horizon_x);
             const yMin = Math.min(...step.horizon_y);
             const yMax = Math.max(...step.horizon_y);
-
             const xCenter = (xMax + xMin) / 2;
             const yCenter = (yMax + yMin) / 2;
-            const spanX = (xMax - xMin) * 1.2;
-            const spanY = (yMax - yMin) * 1.2;
-            const span = Math.max(spanX, spanY, 15.0) / 2.0; // Minimum 15m span
-
-            const layoutUpdate = {
+            const span = Math.max((xMax - xMin) * 1.2, (yMax - yMin) * 1.2, 15.0) / 2.0;
+            const layoutUpdateLocal = {
                 'xaxis.range': [xCenter - span, xCenter + span],
                 'yaxis.range': [yCenter - span, yCenter + span]
             };
 
-            Plotly.update('plot-local', update, layoutUpdate, traces);
+            const tailStart = Math.max(0, index - 100);
+            const tailSteps = log.slice(tailStart, index + 1);
+            const tailX = tailSteps.map(s => s.x);
+            const tailY = tailSteps.map(s => s.y);
+
+            const updateLocal = {
+                x: [tailX, [step.x], step.horizon_x],
+                y: [tailY, [step.y], step.horizon_y]
+            };
+            const tracesLocal = [3, 5, 4];
+
+            Plotly.update('plot-local', updateLocal, layoutUpdateLocal, tracesLocal);
+
+            // Update Individual Plots
+            const stateNames = ['phi', 'vx', 'vy', 'r', 's', 'D', 'B', 'delta', 'vs', 'kappa'];
+            const inputNames = ['dD', 'dB', 'dDelta', 'dVs'];
+            const names = [...stateNames, ...inputNames];
+
+            names.forEach(name => {
+                const horizonX = Array.from({ length: step[`horizon_${name}`].length }, (_, i) => index + i);
+                const update = {
+                    x: [horizonX, [index]],
+                    y: [step[`horizon_${name}`], [step[name]]]
+                };
+                const tracesToUpdate = [1, 2];
+                if (name === 'vx') {
+                    update.x.push([index + step.horizon_vx.length - 1]);
+                    update.y.push([step.terminal_vx_constraint]);
+                    tracesToUpdate.push(3);
+                }
+                Plotly.update(`plot-${name}`, update, {}, tracesToUpdate);
+            });
         }
 
         function togglePlay() {
@@ -296,8 +364,6 @@
 
             const speed = parseFloat(document.getElementById('speed-slider').value) / 10.0;
             document.getElementById('speed-display').innerText = speed.toFixed(1) + 'x';
-
-            // Base delay is 50ms (20fps), adjusted by speed
             const delay = 50 / speed;
             setTimeout(() => {
                 animationFrame = requestAnimationFrame(animate);

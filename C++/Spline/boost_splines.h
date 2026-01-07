@@ -27,6 +27,7 @@ class BoostSplines {
   Eigen::Vector2d getPostion(double s) const;
   Eigen::Vector2d getDerivative(double s) const;
   Eigen::Vector2d getSecondDerivative(double s) const;
+  double getCurvature(double s) const;
   double getNLeft(double s) const;
   double getNRight(double s) const;
   double getVelocity(double s) const;

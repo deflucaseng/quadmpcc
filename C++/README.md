@@ -81,7 +81,7 @@ make -j$(nproc)
 > [!NOTE]
 > If you encounter Eigen-related compilation errors with GCC 13, the build system is configured to automatically fetch a compatible version.
 > [!NOTE]
-> If you use a different target than X64_INTEL_HASWELL, you need to set the target in the CMake command line, e.g., `cmake .. -DTARGET=ARMV8A_APPLE_M1`.
+> The build defaults to `GENERIC` targets for linear algebra. If you wish to use a specific architecture (e.g., for M1 or specialized Intel instructions), set them in the CMake command line: `cmake .. -DTARGET=ARMV8A_APPLE_M1 -DHPIPM_TARGET=ARMV8A_APPLE_M1`.
 
 ## Usage
 

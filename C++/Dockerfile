@@ -37,7 +37,10 @@ RUN pip install --no-cache-dir \
     cpplint \
     black \
     flake8 \
-    gitman
+    gitman \
+    numpy \
+    matplotlib \
+    scipy
 
 # Copy Gitman config and install dependencies
 
@@ -51,7 +54,8 @@ RUN groupadd --gid $USER_GID $USERNAME \
 
 # Set working directory and ownership
 WORKDIR /app/MPCC
-RUN chown -R $USERNAME:$USERNAME /app
+RUN chown -R $USERNAME:$USERNAME /app && \
+    chown -R $USERNAME:$USERNAME $VIRTUAL_ENV
 
 # Switch to non-root user
 USER $USERNAME
