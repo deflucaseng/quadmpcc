@@ -1,0 +1,21 @@
+{
+    "qC": 0.1,
+    "qL": 200.0,
+    "qVs": 0.02,
+    "qMu": 0.01,
+    "qOmega": 1e-3,
+    "rT": 1e-4,
+    "rP": 1e-4,
+    "rQ": 1e-4,
+    "rR": 1e-4,
+    "rVs": 1e-4,
+    "rdT": 1e-3,
+    "rdP": 1e-3,
+    "rdQ": 1e-3,
+    "rdR": 1e-3,
+    "rdVs": 1e-4,
+    "qCNmult": 5.0,
+    "qOmegaNmult": 5.0,
+    "sc_quad_tunnel": 100.0,
+    "sc_lin_tunnel": 10.0
+}

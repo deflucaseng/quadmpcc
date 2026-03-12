@@ -1,88 +1,67 @@
-// Copyright 2019 Alexander Liniger
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-
-#include "Tests/spline_test.h"
-#include "Tests/model_integrator_test.h"
-#include "Tests/constratins_test.h"
-#include "Tests/cost_test.h"
-
-#include "MPC/mpc.h"
-#include "Model/integrator.h"
-#include "Params/track.h"
-#include "Plotting/plotting.h"
-
+#include "mpcc/mpc.h"
+#include "mpcc/integrator.h"
 #include <nlohmann/json.hpp>
+#include <fstream>
+#include <iostream>
+#include <list>
+
 using json = nlohmann::json;
 
-int main() {
-
+int main()
+{
     using namespace mpcc;
-    std::ifstream iConfig("Params/config.json");
-    json jsonConfig;
-    iConfig >> jsonConfig;
 
-    PathToJson json_paths {jsonConfig["model_path"],
-                           jsonConfig["cost_path"],
-                           jsonConfig["bounds_path"],
-                           jsonConfig["track_path"],
-                           jsonConfig["normalization_path"]};
+    std::ifstream iConfig("params/config.json");
+    if (!iConfig.is_open()) {
+        std::cerr << "ERROR: could not open params/config.json\n";
+        return 1;
+    }
+    json jc;
+    iConfig >> jc;
 
-    // std::cout << testSpline() << std::endl;
-    // std::cout << testArcLengthSpline(json_paths) << std::endl;
+    PathToJson paths{
+        jc["model_path"].get<std::string>(),
+        jc["cost_path"].get<std::string>(),
+        jc["bounds_path"].get<std::string>(),
+        jc["normalization_path"].get<std::string>(),
+        jc["waypoints_path"].get<std::string>()
+    };
 
-    // std::cout << testIntegrator(json_paths) << std::endl;
-    // std::cout << testLinModel(json_paths) << std::endl;
+    MPC mpc(jc["n_sqp"], jc["n_reset"], jc["sqp_mixing"], jc["Ts"], paths);
+    mpc.setTrack(paths.waypoints_path,
+                 jc["tunnel_width"],
+                 jc["tunnel_gate_width"],
+                 jc["tunnel_k"],
+                 jc["frame_ds"]);
 
-    // std::cout << testAlphaConstraint(json_paths) << std::endl;
-    // std::cout << testTireForceConstraint(json_paths) << std::endl;
-    // std::cout << testTrackConstraint(json_paths) << std::endl;
+    Integrator integrator(jc["Ts"], paths);
 
-    // std::cout << testCost(json_paths) << std::endl;
-
-    Integrator integrator = Integrator(jsonConfig["Ts"],json_paths);
-    Plotting plotter = Plotting(jsonConfig["Ts"],json_paths);
-
-    Track track = Track(json_paths.track_path);
-    TrackPos track_xy = track.getTrack();
+    // Initial state: hovering at origin, identity quaternion (body z-up), at rest
+    State x0;
+    x0.setZero();
+    x0.qw = 1.0;                          // identity rotation
+    x0.T  = 9.81;                         // hover thrust = m*g = 1.0 * 9.81
+    x0.vs = jc["v0"].get<double>();
+    x0.vx = jc["v0"].get<double>();
 
     std::list<MPCReturn> log;
-    MPC mpc(jsonConfig["n_sqp"],jsonConfig["n_reset"],jsonConfig["sqp_mixing"],jsonConfig["Ts"],json_paths);
-    mpc.setTrack(track_xy.X,track_xy.Y);
-    const double phi_0 = std::atan2(track_xy.Y(1) - track_xy.Y(0),track_xy.X(1) - track_xy.X(0));
-    State x0 = {track_xy.X(0),track_xy.Y(0),phi_0,jsonConfig["v0"],0,0,0,0.5,0,jsonConfig["v0"]};
-    for(int i=0;i<jsonConfig["n_sim"];i++)
-    {
-        MPCReturn mpc_sol = mpc.runMPC(x0);
-        x0 = integrator.simTimeStep(x0,mpc_sol.u0,jsonConfig["Ts"]);
-        log.push_back(mpc_sol);
-    }
-    plotter.plotRun(log,track_xy);
-    plotter.plotSim(log,track_xy);
+    const int    n_sim = jc["n_sim"].get<int>();
+    const double Ts    = jc["Ts"].get<double>();
 
-    double mean_time = 0.0;
-    double max_time = 0.0;
-    for(MPCReturn log_i : log)
-    {
-        mean_time += log_i.time_total;
-        if(log_i.time_total > max_time)
-            max_time = log_i.time_total;
+    for (int i = 0; i < n_sim; i++) {
+        MPCReturn sol = mpc.runMPC(x0);
+        x0 = integrator.simTimeStep(x0, sol.u0, Ts);
+        log.push_back(sol);
     }
-    std::cout << "mean nmpc time " << mean_time/double(jsonConfig["n_sim"]) << std::endl;
-    std::cout << "max nmpc time " << max_time << std::endl;
+
+    double mean_t = 0.0, max_t = 0.0;
+    for (auto &l : log) {
+        mean_t += l.time_total;
+        if (l.time_total > max_t) max_t = l.time_total;
+    }
+    mean_t /= static_cast<double>(log.size());
+
+    std::cout << "mean nmpc time: " << mean_t << " s\n";
+    std::cout << "max  nmpc time: " << max_t  << " s\n";
     return 0;
 }
-
-

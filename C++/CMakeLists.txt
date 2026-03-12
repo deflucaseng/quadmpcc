@@ -1,43 +1,69 @@
-cmake_minimum_required(VERSION 3.7)
-project(MPCC)
+cmake_minimum_required(VERSION 3.16)
+project(QuadMPCC)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-O2")
 
-include_directories(.)
+# ── PathWeaver (fetched from GitHub) ──────────────────────────────────────────
+include(FetchContent)
+FetchContent_Declare(pathweaver
+    GIT_REPOSITORY https://github.com/deflucaseng/PathWeaver.git
+    GIT_TAG        main
+)
+FetchContent_MakeAvailable(pathweaver)
+
+# ── Include directories ────────────────────────────────────────────────────────
 include_directories(External/blasfeo/lib/include)
 include_directories(External/hpipm/lib/include)
-include_directories(External/matplotlib)
-include_directories(External/Eigen)
 include_directories(External/Json/include)
+include_directories(External/Eigen)
+include_directories(include)
 
-add_executable(MPCC
-        main.cpp
-        types.cpp
-        types.h
-        config.h
-        Params/params.cpp
-        Spline/cubic_spline.cpp
-        Spline/arc_length_spline.cpp
-        Interfaces/hpipm_interface.cpp
-        Interfaces/solver_interface.cpp
-        Constraints/constraints.cpp
-        Constraints/bounds.cpp
-        Cost/cost.cpp
-        Model/model.cpp
-        Model/integrator.cpp
-        Tests/spline_test.cpp
-        Tests/cost_test.cpp
-        Tests/model_integrator_test.cpp
-        Tests/constratins_test.cpp
-        MPC/mpc.cpp
-        Params/track.cpp
-        Params/track.h
-        Plotting/plotting.cpp
-        Plotting/plotting.h)
+# ── Library sources ────────────────────────────────────────────────────────────
+set(MPCC_SOURCES
+    src/types.cpp
+    src/model.cpp
+    src/integrator.cpp
+    src/cost.cpp
+    src/constraints.cpp
+    src/bounds.cpp
+    src/params.cpp
+    src/solver_interface.cpp
+    src/hpipm_interface.cpp
+    src/mpc.cpp
+)
 
-find_package(Python COMPONENTS Development)
-target_include_directories(MPCC PRIVATE ${Python_INCLUDE_DIRS})
-target_link_libraries(MPCC ${Python_LIBRARIES})
+# ── Main executable ────────────────────────────────────────────────────────────
+add_executable(QuadMPCC main.cpp ${MPCC_SOURCES})
 
-target_link_libraries(MPCC ${CMAKE_SOURCE_DIR}/External/hpipm/lib/lib/libhpipm.a ${CMAKE_SOURCE_DIR}/External/blasfeo/lib/lib/libblasfeo.a m)
+target_include_directories(QuadMPCC PRIVATE
+    include
+    External/Eigen
+    External/Json/include
+)
+
+target_link_libraries(QuadMPCC
+    pathweaver::pathweaver
+    ${CMAKE_SOURCE_DIR}/External/hpipm/lib/lib/libhpipm.a
+    ${CMAKE_SOURCE_DIR}/External/blasfeo/lib/lib/libblasfeo.a
+    m
+)
+
+# ── Tests ──────────────────────────────────────────────────────────────────────
+enable_testing()
+
+foreach(TEST_NAME model_test cost_test constraints_test)
+    add_executable(${TEST_NAME} tests/${TEST_NAME}.cpp ${MPCC_SOURCES})
+    target_include_directories(${TEST_NAME} PRIVATE
+        include
+        External/Eigen
+        External/Json/include
+    )
+    target_link_libraries(${TEST_NAME}
+        pathweaver::pathweaver
+        ${CMAKE_SOURCE_DIR}/External/hpipm/lib/lib/libhpipm.a
+        ${CMAKE_SOURCE_DIR}/External/blasfeo/lib/lib/libblasfeo.a
+        m
+    )
+    add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+endforeach()

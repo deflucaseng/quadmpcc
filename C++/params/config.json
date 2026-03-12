@@ -1,0 +1,17 @@
+{
+    "n_sqp": 2,
+    "n_reset": 5,
+    "sqp_mixing": 0.8,
+    "n_sim": 300,
+    "Ts": 0.02,
+    "v0": 2.0,
+    "model_path": "params/model.json",
+    "cost_path": "params/cost.json",
+    "bounds_path": "params/bounds.json",
+    "normalization_path": "params/normalization.json",
+    "waypoints_path": "params/waypoints.yaml",
+    "tunnel_width": 2.0,
+    "tunnel_gate_width": 0.9,
+    "tunnel_k": 10.0,
+    "frame_ds": 0.05
+}

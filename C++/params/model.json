@@ -1,0 +1,10 @@
+{
+    "m": 1.0,
+    "g": 9.81,
+    "arm_length": 0.15,
+    "k_thrust": 1e-6,
+    "max_thrust": 20.0,
+    "max_bodyrate": 10.0,
+    "initial_velocity": 2.0,
+    "s_trust_region": 3.0
+}

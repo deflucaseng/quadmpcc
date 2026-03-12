@@ -25,10 +25,6 @@ git clone "$repository_blasfeo" "$localFolder_blasfeo"
 repository_hpipm="https://github.com/giaf/hpipm.git"
 localFolder_hpipm="External/hpipm"
 git clone "$repository_hpipm" "$localFolder_hpipm"
-## clone matplotlib-cpp
-repository_matplotlib="https://github.com/lava/matplotlib-cpp.git"
-localFolder_matplotlib="External/matplotlib"
-git clone "$repository_matplotlib" "$localFolder_matplotlib"
 ## clone eigne
 repository_eigen="https://gitlab.com/libeigen/eigen.git"
 localFolder_eigen="External/Eigen"
